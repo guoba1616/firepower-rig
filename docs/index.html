@@ -2,7 +2,8 @@
 <!--
   火力战车 · FIREPOWER RIG
   第一人称转管机枪战车 × 方块僵尸（僵尸模型与数值来自 Blockade）
-  手机：陀螺仪转动视角 / 左下摇杆移动 / 右下按钮开火（可在屏幕空白处滑动微调视角）
+  手机：滑动屏幕转视角（轻度瞄准辅助；设置里可开陀螺仪）/ 左下摇杆移动 / 右下按钮开火
+  调试：网址加 ?touch 可在电脑上强制触屏模式
   电脑：鼠标转动视角 / WASD 移动 / 左键开火 / Esc 暂停
 -->
 <html lang="zh-CN">
@@ -25,121 +26,172 @@ body.touch .pOnly{display:none!important}
 .sa-l{left:calc(16px + env(safe-area-inset-left))}
 .sa-r{right:calc(16px + env(safe-area-inset-right))}
 
-/* 左上：心形 + 血条（按草图） */
-#hpBox{position:absolute;top:14px;display:flex;align-items:center;gap:10px}
-#heart{width:34px;height:31px;fill:#ff3d4d;stroke:#fff;stroke-width:2.2;filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))}
-#heart.low{animation:beat .6s infinite}
-@keyframes beat{0%,100%{transform:scale(1)}40%{transform:scale(1.22)}}
-.bar{width:min(32vw,300px);height:16px;border:2px solid rgba(255,255,255,.9);background:rgba(0,0,0,.45);position:relative;overflow:hidden}
-#hpFill{position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(#7dff6a,#2fbf3a);transition:width .12s}
-#hpGhost{position:absolute;left:0;top:0;bottom:0;width:100%;background:rgba(255,255,255,.55)}
-#hpTxt{font-weight:900;font-size:15px;text-shadow:0 1px 3px #000;min-width:58px}
+/* ===== 方块像素风 ===== */
+:root{--k:#140d08;--or:#ff9a1f;--yl:#ffd23a;--rd:#e8382c;--gn:#5bd84a}
+svg.px{display:block;shape-rendering:crispEdges}
+.pxt{display:inline-block;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.85))}
+.pxs{text-shadow:2px 2px 0 #000}
+/* 缺角黑边：四条边各画一条、四个角空着 → 像素圆角 */
+.pxb{box-shadow:0 -3px 0 0 var(--k),0 3px 0 0 var(--k),-3px 0 0 0 var(--k),3px 0 0 0 var(--k)}
+.segs{display:flex;gap:2px;padding:3px;background:rgba(10,6,4,.62)}
+.segs b{flex:1;position:relative;background:#3b2c22;overflow:hidden}
+.segs b i{position:absolute;left:0;top:0;bottom:0;width:100%;background:var(--c);box-shadow:inset 0 3px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.25)}
+.segs b.off i{display:none}
 
-#waveBox{position:absolute;left:50%;top:10px;transform:translateX(-50%);text-align:center;text-shadow:0 2px 4px rgba(0,0,0,.7)}
-#waveTxt{font-size:20px;font-weight:900;letter-spacing:2px}
-#subTxt{font-size:13px;opacity:.85;margin-top:2px}
-#scoreTxt{font-size:13px;color:#ffd25a;font-weight:800;margin-top:2px}
-#bossBox{position:absolute;left:50%;top:72px;transform:translateX(-50%);width:min(46vw,420px);display:none;text-align:center}
-#bossName{font-size:13px;font-weight:900;color:#ff6a5a;text-shadow:0 1px 3px #000;margin-bottom:3px;letter-spacing:1px}
-.bbar{height:10px;border:2px solid #fff;background:rgba(0,0,0,.5);position:relative}
-#bossFill{position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(#ff5a3a,#b0101a)}
+/* 左上：像素心 + 分段血条（每格 10 HP） */
+#hpBox{position:absolute;top:16px;display:flex;align-items:center;gap:12px}
+#heart{filter:drop-shadow(2px 2px 0 rgba(0,0,0,.7))}
+#heart.low{animation:beat .5s steps(1) infinite}
+@keyframes beat{50%{transform:scale(1.25)}}
+#hpSegs{width:min(24vw,260px);height:22px;--c:var(--gn)}
+#hpSegs b.gh{background:#f4ede0}
+#hpTxt{min-width:40px}
 
-#radar{position:absolute;top:12px;width:120px;height:120px;border-radius:50%}
-.hbtn{position:absolute;pointer-events:auto;background:rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.75);color:#fff;
-  border-radius:10px;font-weight:800;font-size:14px;font-family:inherit;padding:7px 11px;touch-action:manipulation}
-.hbtn:active{background:rgba(255,255,255,.25)}
-#pauseBtn{top:14px}
-#calBtn{top:60px}
+/* 顶部中间：波次 / 剩余僵尸 / 分数 */
+#waveBox{position:absolute;left:50%;top:12px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px}
+#remBar{width:min(21vw,200px);height:11px;padding:2px;--c:var(--rd)}
+#remBar:empty{display:none}
+#subTxt{font-size:12px;font-weight:800;opacity:.92}
+#scoreRow{position:absolute;top:50px;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:800;margin-left:39px}
+#scoreTxt{transform-origin:0 50%}
+#scoreTxt.bump{animation:bump .25s steps(2)}
+@keyframes bump{0%{transform:scale(1.35)}}
+#bossBox{position:absolute;left:50%;top:86px;transform:translateX(-50%);width:min(46vw,420px);display:none}
+#bossName{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:900;color:#ff6a5a;margin-bottom:6px;letter-spacing:1px}
+#bossSegs{height:14px;--c:var(--rd)}
 
-/* 准星：[ · ]（按草图） */
+#radar{position:absolute;top:16px;width:112px;height:112px;image-rendering:pixelated}
+.hbtn{position:absolute;pointer-events:auto;background:rgba(30,22,16,.78);border:0;width:44px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  box-shadow:inset 3px 3px 0 rgba(255,255,255,.18),inset -3px -3px 0 rgba(0,0,0,.45),0 -3px 0 0 var(--k),0 3px 0 0 var(--k),-3px 0 0 0 var(--k),3px 0 0 0 var(--k);touch-action:manipulation}
+.hbtn:active{transform:translateY(2px);background:rgba(90,66,44,.9)}
+#pauseBtn{top:18px}
+#calBtn{top:70px}
+body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
+
+/* 准星：[ · ]（按草图），有瞄准辅助目标时变红收紧 */
 #cross{position:absolute;left:50%;top:50%;width:0;height:0;--g:14px}
-#cross .br{position:absolute;top:-15px;width:9px;height:30px;border:3px solid rgba(255,255,255,.92);filter:drop-shadow(0 0 2px rgba(0,0,0,.8))}
+#cross .br{position:absolute;top:-15px;width:9px;height:30px;border:3px solid rgba(255,255,255,.95);filter:drop-shadow(2px 2px 0 rgba(0,0,0,.75))}
 #cross .l{left:calc(-1*var(--g) - 9px);border-right:none}
 #cross .r{left:var(--g);border-left:none}
-#cross .dot{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;border:2px solid #fff;filter:drop-shadow(0 0 2px rgba(0,0,0,.8))}
+#cross .dot{position:absolute;left:-3px;top:-3px;width:6px;height:6px;background:#fff;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.75))}
 #cross.hot .br{border-color:#ff8a3a}
+#cross.lock .br{border-color:#ff4a3a}
+#cross.lock .dot{background:#ff4a3a}
 #hitm{position:absolute;left:0;top:0;opacity:0}
-#hitm i{position:absolute;width:3px;height:11px;background:#fff;left:-1.5px;top:-5.5px}
+#hitm i{position:absolute;width:4px;height:10px;background:#fff;left:-2px;top:-5px}
 #hitm i:nth-child(1){transform:rotate(45deg) translateY(-17px)}
 #hitm i:nth-child(2){transform:rotate(135deg) translateY(-17px)}
 #hitm i:nth-child(3){transform:rotate(225deg) translateY(-17px)}
 #hitm i:nth-child(4){transform:rotate(315deg) translateY(-17px)}
 #hitm.kill i{background:#ff3a3a;height:14px}
 #hitm.head i{background:#ffd23a}
-#heatBox{position:absolute;left:50%;top:calc(50% + 34px);transform:translateX(-50%);width:90px;text-align:center}
-.hb{height:5px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.5);position:relative}
-#heatFill{position:absolute;left:0;top:0;bottom:0;width:0;background:#ffb23a}
-#heatTxt{font-size:12px;font-weight:900;color:#ff5a2a;opacity:0;text-shadow:0 1px 2px #000;letter-spacing:2px}
+#heatBox{position:absolute;left:50%;top:calc(50% + 32px);transform:translateX(-50%);width:96px;text-align:center}
+#heatSegs{height:10px;padding:2px;--c:var(--yl)}
+#heatSegs.warm{--c:var(--or)}
+#heatSegs.over{--c:#ff3a1a}
+#heatTxt{font-size:13px;font-weight:900;color:#ff4a2a;opacity:0;letter-spacing:3px;margin-top:4px}
+#pops{position:absolute;left:50%;top:50%;width:0;height:0}
+.pop{position:absolute;left:26px;top:-36px;animation:pop .8s steps(8) forwards}
+@keyframes pop{0%{transform:translateY(6px) scale(1.3)}25%{transform:translateY(0) scale(1)}100%{transform:translateY(-30px);opacity:0}}
 
 #dmgDirs{position:absolute;left:50%;top:50%;width:0;height:0}
 .dd{position:absolute;left:0;top:0;width:0;height:0}
-.dd i{position:absolute;left:-34px;top:-150px;width:68px;height:16px;border-radius:50% 50% 0 0/100% 100% 0 0;background:rgba(255,40,30,.85);filter:blur(1px)}
+.dd span{position:absolute;left:-20px;top:-114px}
 #vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(200,0,0,.75) 100%);opacity:0}
-#ann{position:absolute;left:0;right:0;top:24%;text-align:center;opacity:0;text-shadow:0 3px 8px rgba(0,0,0,.8)}
-#annT{font-size:clamp(28px,6vw,54px);font-weight:900;letter-spacing:4px}
-#annS{font-size:clamp(13px,2.4vw,18px);margin-top:6px;opacity:.9}
-#toast{position:absolute;left:50%;top:calc(50% + 70px);transform:translateX(-50%);background:rgba(0,0,0,.6);border-left:4px solid #ffb23a;
-  padding:8px 14px;font-size:14px;max-width:80vw;opacity:0;transition:opacity .3s;white-space:nowrap}
-#clickHint{position:absolute;left:50%;top:62%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:10px 18px;border-radius:8px;font-weight:800;display:none}
+#ann{position:absolute;left:0;right:0;top:22%;text-align:center;opacity:0}
+#ann.drop{animation:drop .4s steps(4)}
+@keyframes drop{0%{transform:translateY(-60px)}}
+#annT{font-size:clamp(28px,6vw,54px);font-weight:900;letter-spacing:4px;text-shadow:3px 3px 0 #000,6px 6px 0 rgba(0,0,0,.35)}
+#annS{font-size:clamp(13px,2.4vw,18px);margin-top:8px;font-weight:800;text-shadow:2px 2px 0 #000}
+#toast{position:absolute;left:50%;top:calc(50% + 76px);transform:translateX(-50%);background:rgba(20,14,10,.86);
+  box-shadow:inset 4px 0 0 var(--or),0 -3px 0 0 var(--k),0 3px 0 0 var(--k),-3px 0 0 0 var(--k),3px 0 0 0 var(--k);
+  padding:8px 14px 8px 18px;font-size:14px;font-weight:700;max-width:80vw;opacity:0;transition:opacity .3s steps(3);white-space:nowrap}
+#clickHint{position:absolute;left:50%;top:62%;transform:translateX(-50%);background:rgba(20,14,10,.86);padding:10px 18px;font-weight:800;display:none;
+  box-shadow:0 -3px 0 0 var(--k),0 3px 0 0 var(--k),-3px 0 0 0 var(--k),3px 0 0 0 var(--k)}
 
-/* 左下摇杆 / 右下开火（按草图） */
-#stick{position:absolute;left:calc(40px + env(safe-area-inset-left));bottom:34px;width:150px;height:150px;border-radius:50%;
-  border:3px solid rgba(255,255,255,.75);background:rgba(0,0,0,.18)}
-#knob{position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;border:3px solid #fff;background:rgba(255,255,255,.25)}
-#fireBtn{position:absolute;right:calc(44px + env(safe-area-inset-right));bottom:44px;width:128px;height:128px;border-radius:50%;
-  border:3px solid rgba(255,255,255,.85);background:rgba(255,80,30,.22)}
-#fireBtn svg{position:absolute;inset:0;width:100%;height:100%}
-#fireBtn.on{background:rgba(255,120,40,.5);transform:scale(.94)}
-#fireBtn.hot{border-color:#ff5a2a}
+/* 左下摇杆 / 右下开火（像素圆环，开火键外圈兼作过热指示） */
+#stick{position:absolute;left:calc(40px + env(safe-area-inset-left));bottom:34px;width:150px;height:150px}
+#stick>svg,#fireBtn>svg{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.45))}
+#knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;background:rgba(255,255,255,.3);
+  box-shadow:inset 4px 4px 0 rgba(255,255,255,.45),inset -4px -4px 0 rgba(0,0,0,.25),0 -3px 0 0 #fff,0 3px 0 0 #fff,-3px 0 0 0 #fff,3px 0 0 0 #fff}
+#fireBtn{position:absolute;right:calc(44px + env(safe-area-inset-right));bottom:44px;width:128px;height:128px}
+#fireBtn .ic{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);filter:drop-shadow(3px 3px 0 rgba(0,0,0,.45))}
+#fireBtn.on{transform:scale(.93)}
+#fireBtn.on .fill{fill-opacity:.55}
 
-/* 覆盖层 */
+/* 覆盖层：像素面板 + 立体按钮 */
 .ov{position:fixed;inset:0;z-index:5;display:none;align-items:center;justify-content:center;background:rgba(10,8,6,.55);backdrop-filter:blur(3px)}
 .ov.show{display:flex}
-.panel{background:linear-gradient(160deg,rgba(40,34,28,.96),rgba(20,17,14,.96));border:2px solid #6b5a44;box-shadow:0 0 0 4px rgba(0,0,0,.35),0 20px 60px rgba(0,0,0,.6);
-  padding:22px 28px;max-width:min(92vw,560px);max-height:92vh;overflow:auto;text-align:center}
+.panel{background-color:#2b2119;
+  background-image:linear-gradient(45deg,rgba(255,255,255,.028) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.028) 75%),linear-gradient(45deg,rgba(255,255,255,.028) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.028) 75%);
+  background-size:16px 16px;background-position:0 0,8px 8px;
+  box-shadow:inset 4px 4px 0 #4f3f2e,inset -4px -4px 0 #170f0a,0 -4px 0 0 #000,0 4px 0 0 #000,-4px 0 0 0 #000,4px 0 0 0 #000,0 12px 0 0 rgba(0,0,0,.35);
+  padding:22px 28px;max-width:min(92vw,560px);max-height:90vh;overflow:auto;text-align:center}
 .logo .l1{display:block;font-size:clamp(38px,8vw,66px);font-weight:900;letter-spacing:6px;color:#ffb23a;
-  text-shadow:4px 4px 0 #6a2a0a,0 0 30px rgba(255,140,40,.35)}
-.logo .l2{display:block;font-size:13px;letter-spacing:9px;color:#d8c8a8;margin-top:2px}
+  text-shadow:2px 2px 0 #d8640c,4px 4px 0 #a8420a,6px 6px 0 #6a2208,8px 8px 0 #000}
+.logo .l2{display:flex;justify-content:center;margin-top:12px}
 .tag{margin:12px 0 16px;color:#e8dcc8;font-size:14px;line-height:1.6}
-.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.btn{font-family:inherit;font-weight:900;font-size:17px;padding:11px 26px;border:2px solid #b8a07a;background:#3a3026;color:#fff;cursor:pointer;letter-spacing:2px;
-  box-shadow:0 4px 0 #120e0a;touch-action:manipulation}
-.btn:hover{background:#4a3e30}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #120e0a}
-.btn.primary{background:#d9661c;border-color:#ffcf8a}
-.btn.primary:hover{background:#ec7424}
+.btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn{font-family:inherit;font-weight:900;font-size:17px;padding:11px 26px;border:0;margin:3px;background:#4a3d30;color:#fff;cursor:pointer;letter-spacing:2px;
+  text-shadow:2px 2px 0 rgba(0,0,0,.55);touch-action:manipulation;
+  box-shadow:inset 3px 3px 0 #6e5c47,inset -3px -4px 0 #241b13,0 -3px 0 0 #000,0 3px 0 0 #000,-3px 0 0 0 #000,3px 0 0 0 #000,0 7px 0 0 rgba(0,0,0,.4)}
+.btn:hover{background:#5a4a3a}
+.btn:active{transform:translateY(4px);box-shadow:inset 3px 4px 0 #241b13,inset -3px -3px 0 #6e5c47,0 -3px 0 0 #000,0 3px 0 0 #000,-3px 0 0 0 #000,3px 0 0 0 #000}
+.btn.primary{background:#e0701c;box-shadow:inset 3px 3px 0 #ffb060,inset -3px -4px 0 #9a420a,0 -3px 0 0 #000,0 3px 0 0 #000,-3px 0 0 0 #000,3px 0 0 0 #000,0 7px 0 0 rgba(0,0,0,.4)}
+.btn.primary:hover{background:#f07e26}
+.btn.primary:active{box-shadow:inset 3px 4px 0 #9a420a,inset -3px -3px 0 #ffb060,0 -3px 0 0 #000,0 3px 0 0 #000,-3px 0 0 0 #000,3px 0 0 0 #000}
 .ctrl{margin-top:16px;font-size:13px;color:#cdbfa6;line-height:1.8;text-align:left;display:inline-block}
 .ctrl b{color:#ffd28a}
-.best{margin-top:10px;font-size:13px;color:#ffd25a}
-h2{font-size:24px;letter-spacing:4px;margin-bottom:12px;color:#ffb23a}
-.row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:10px 0;font-size:15px;text-align:left}
-.row input[type=range]{width:180px;accent-color:#ff8a2a}
-.row input[type=checkbox]{width:22px;height:22px;accent-color:#ff8a2a}
-.row output{width:34px;text-align:right;color:#ffd28a;font-weight:800}
-.cards{display:flex;gap:14px;justify-content:center;margin:14px 0 4px;flex-wrap:wrap}
-.card{width:min(28vw,170px);min-height:170px;background:#2a231c;border:2px solid #7a6548;padding:14px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;
-  box-shadow:0 5px 0 #0e0b08;transition:transform .1s;touch-action:manipulation}
-.card:hover{transform:translateY(-4px);border-color:#ffb23a}
-.card .ic{font-size:36px;line-height:1}
-.card .nm{font-weight:900;font-size:16px;color:#ffd28a}
+.best{margin-top:12px;font-size:13px;font-weight:800;color:#ffd25a;display:flex;align-items:center;justify-content:center;gap:8px}
+h2{font-size:24px;letter-spacing:4px;margin-bottom:12px;color:#ffb23a;text-shadow:3px 3px 0 #000}
+.row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:12px 0;font-size:15px;font-weight:700;text-align:left}
+.row output{width:34px;text-align:right;color:#ffd28a;font-weight:900}
+.row input[type=range]{-webkit-appearance:none;appearance:none;width:180px;margin-left:auto;height:24px;background:transparent;--p:50%;cursor:pointer}
+.row input[type=range]::-webkit-slider-runnable-track{height:10px;background:linear-gradient(90deg,var(--or) var(--p),#120c08 var(--p));box-shadow:0 0 0 3px #000,inset 0 3px 0 rgba(0,0,0,.3)}
+.row input[type=range]::-moz-range-track{height:10px;background:linear-gradient(90deg,var(--or) var(--p),#120c08 var(--p));box-shadow:0 0 0 3px #000}
+.row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:24px;margin-top:-7px;border:0;border-radius:0;background:#f4ede0;box-shadow:inset -3px -3px 0 #9a8a78,0 0 0 3px #000}
+.row input[type=range]::-moz-range-thumb{width:16px;height:24px;border:0;border-radius:0;background:#f4ede0;box-shadow:inset -3px -3px 0 #9a8a78,0 0 0 3px #000}
+.row input[type=checkbox]{-webkit-appearance:none;appearance:none;width:46px;height:24px;background:#120c08;position:relative;cursor:pointer;flex:none;box-shadow:0 0 0 3px #000}
+.row input[type=checkbox]::after{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;background:#7a6a58;box-shadow:inset 3px 3px 0 #9a8a78,inset -3px -3px 0 #4a3a2a}
+.row input[type=checkbox]:checked{background:#2e6a18}
+.row input[type=checkbox]:checked::after{left:25px;background:var(--gn);box-shadow:inset 3px 3px 0 #a8ff98,inset -3px -3px 0 #2a8a2a}
+.cards{display:flex;gap:16px;justify-content:center;margin:16px 0 8px;flex-wrap:wrap}
+.card{width:min(28vw,170px);min-height:180px;background:#3a2e22;padding:14px 10px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;margin:3px;touch-action:manipulation;
+  box-shadow:inset 3px 3px 0 #5e4c38,inset -3px -3px 0 #1e160f,0 -3px 0 0 #000,0 3px 0 0 #000,-3px 0 0 0 #000,3px 0 0 0 #000,0 9px 0 0 rgba(0,0,0,.4);
+  animation:cardIn .36s steps(4) backwards}
+@keyframes cardIn{0%{transform:translateY(60px);opacity:0}}
+.card:hover,.card:active{transform:translateY(-6px);background:#45372a;
+  box-shadow:inset 3px 3px 0 #6e5a42,inset -3px -3px 0 #1e160f,0 -3px 0 0 var(--or),0 3px 0 0 var(--or),-3px 0 0 0 var(--or),3px 0 0 0 var(--or),0 14px 0 0 rgba(0,0,0,.35)}
+.card .ic{height:46px;display:flex;align-items:center;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.5))}
+.card .nm{font-weight:900;font-size:16px;color:#ffd28a;text-shadow:2px 2px 0 #000}
 .card .ds{font-size:13px;color:#d8cbb4;line-height:1.45}
 .card .lv{font-size:11px;color:#9a8a70;margin-top:auto}
 .card .k{font-size:11px;color:#9a8a70}
-.stats{display:grid;grid-template-columns:auto auto;gap:6px 26px;margin:10px auto 18px;font-size:16px;text-align:left;width:max-content}
-.stats b{color:#ffd28a;text-align:right}
+.pips{display:flex;gap:3px;margin-top:auto}
+.pips i{width:10px;height:10px;background:#1a130d;box-shadow:inset 0 0 0 2px #5a4734}
+.pips i.on{background:var(--yl);box-shadow:inset -2px -2px 0 #b88a10}
+.pips i.new{background:var(--gn);box-shadow:inset -2px -2px 0 #2a8a2a;animation:blink .5s steps(1) infinite}
+@keyframes blink{50%{opacity:.25}}
+.stats{display:grid;grid-template-columns:auto auto;gap:12px 30px;align-items:center;margin:12px auto 18px;font-size:16px;font-weight:800;text-align:left;width:max-content}
+.stats b{justify-self:end}
+#newBest{display:none;margin:0 auto 6px;width:max-content;padding:6px 10px;background:#c8401a;animation:blink .6s steps(1) infinite;
+  box-shadow:inset 3px 3px 0 #ff8a4a,inset -3px -3px 0 #7a1a08,0 -3px 0 0 #000,0 3px 0 0 #000,-3px 0 0 0 #000,3px 0 0 0 #000}
 @media (max-height:430px){
   .panel{padding:12px 20px}
   .logo .l1{font-size:40px}
   .tag{margin:6px 0 10px}
   .ctrl{margin-top:8px;line-height:1.6}
   h2{margin-bottom:6px;font-size:20px}
-  .row{margin:5px 0}
-  .card{min-height:140px;padding:10px 8px}
+  .row{margin:6px 0}
+  .cards{margin:10px 0 4px}
+  .card{min-height:146px;padding:10px 8px}
   #stick{width:130px;height:130px;bottom:22px}
   #fireBtn{width:112px;height:112px;bottom:28px}
-  #radar{width:100px;height:100px}
-  #pauseBtn,#calBtn{right:calc(126px + env(safe-area-inset-right))!important}
-  #calBtn{top:56px}
+  #radar{width:92px;height:92px}
+  #pauseBtn,#calBtn{right:calc(122px + env(safe-area-inset-right))!important}
+  #calBtn{top:66px}
+  #bossBox{top:80px}
+  #hpSegs{height:18px}
 }
 #rotate{position:fixed;inset:0;z-index:9;background:#14110f;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-size:18px;text-align:center}
 @media (orientation:portrait){ body.touch #rotate{display:flex} }
@@ -153,35 +205,32 @@ h2{font-size:24px;letter-spacing:4px;margin-bottom:12px;color:#ffb23a}
 <div id="touch"></div>
 
 <div id="hud">
-  <div id="hpBox" class="sa-l">
-    <svg id="heart" viewBox="-2 -2 36 33"><path d="M16 29C6 21 0 15 0 8.5A8 8 0 0 1 16 5A8 8 0 0 1 32 8.5C32 15 26 21 16 29Z"/></svg>
-    <div class="bar"><i id="hpGhost"></i><i id="hpFill"></i></div><b id="hpTxt">100</b>
+  <div id="hpBox" class="sa-l"><span id="heart"></span><div id="hpSegs" class="segs pxb"></div><span id="hpTxt" class="pxt"></span></div>
+  <div id="waveBox">
+    <span id="waveTxt" class="pxt"></span>
+    <div id="remBar" class="segs pxb"></div>
+    <div id="subTxt" class="pxs"></div>
   </div>
-  <div id="waveBox"><div id="waveTxt">准备</div><div id="subTxt"></div><div id="scoreTxt">0</div></div>
-  <div id="bossBox"><div id="bossName">BOSS · 屠夫</div><div class="bbar"><i id="bossFill"></i></div></div>
-  <canvas id="radar" class="sa-r" width="240" height="240"></canvas>
-  <button id="pauseBtn" class="hbtn" style="right:calc(150px + env(safe-area-inset-right))">❚❚</button>
-  <button id="calBtn" class="hbtn tOnly" style="right:calc(150px + env(safe-area-inset-right))">⊙ 校准</button>
+  <div id="scoreRow" class="sa-l"><span id="scoreTxt" class="pxt"></span><span id="killTxt" class="pxs"></span></div>
+  <div id="bossBox"><div id="bossName" class="pxs"><span id="skull"></span>BOSS · 屠夫</div><div id="bossSegs" class="segs pxb"></div></div>
+  <canvas id="radar" class="sa-r pxb" width="56" height="56"></canvas>
+  <button id="pauseBtn" class="hbtn" style="right:calc(142px + env(safe-area-inset-right))" aria-label="暂停"></button>
+  <button id="calBtn" class="hbtn tOnly" style="right:calc(142px + env(safe-area-inset-right))" aria-label="校准"></button>
   <div id="cross"><i class="br l"></i><i class="dot"></i><i class="br r"></i><div id="hitm"><i></i><i></i><i></i><i></i></div></div>
-  <div id="heatBox"><div class="hb"><i id="heatFill"></i></div><div id="heatTxt">过热</div></div>
+  <div id="heatBox"><div id="heatSegs" class="segs pxb"></div><div id="heatTxt" class="pxs">过热</div></div>
+  <div id="pops"></div>
   <div id="dmgDirs"></div>
   <div id="vig"></div>
   <div id="ann"><div id="annT"></div><div id="annS"></div></div>
   <div id="toast"></div>
   <div id="clickHint" class="pOnly">点击画面继续操控</div>
   <div id="stick" class="tOnly"><div id="knob"></div></div>
-  <div id="fireBtn" class="tOnly">
-    <svg viewBox="0 0 128 128">
-      <circle cx="64" cy="64" r="58" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="7"/>
-      <circle id="heatRing" cx="64" cy="64" r="58" fill="none" stroke="#ffb23a" stroke-width="7" stroke-dasharray="364.4" stroke-dashoffset="364.4" transform="rotate(-90 64 64)"/>
-      <path d="M38 70 L74 38 L66 62 L92 60 L72 92 L74 72 Z" fill="#fff" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
-    </svg>
-  </div>
+  <div id="fireBtn" class="tOnly"></div>
 </div>
 
 <div id="menu" class="ov show">
   <div class="panel">
-    <div class="logo"><span class="l1">火力战车</span><span class="l2">FIREPOWER RIG</span></div>
+    <div class="logo"><span class="l1">火力战车</span><span class="l2" id="logoSub"></span></div>
     <p class="tag">驾驶转管机枪战车，在废墟小镇里撑过一波又一波方块僵尸。</p>
     <div class="btns"><button id="bStart" class="btn primary">开始游戏</button><button id="bSet" class="btn">设置</button></div>
     <div class="ctrl" id="ctrlHint"></div>
@@ -192,9 +241,10 @@ h2{font-size:24px;letter-spacing:4px;margin-bottom:12px;color:#ffb23a}
 <div id="settings" class="ov">
   <div class="panel" style="min-width:min(92vw,400px)">
     <h2>设置</h2>
-    <label class="row tOnly">陀螺仪瞄准<input type="checkbox" id="sGyro"></label>
-    <label class="row tOnly">陀螺仪灵敏度<input type="range" id="sGyroSens" min="0.5" max="3" step="0.1"><output></output></label>
     <label class="row tOnly">滑屏灵敏度<input type="range" id="sDragSens" min="0.3" max="3" step="0.1"><output></output></label>
+    <label class="row tOnly">瞄准辅助<input type="checkbox" id="sAssist"></label>
+    <label class="row tOnly">陀螺仪瞄准（转动手机）<input type="checkbox" id="sGyro"></label>
+    <label class="row tOnly gyroOnly">陀螺仪灵敏度<input type="range" id="sGyroSens" min="0.5" max="3" step="0.1"><output></output></label>
     <label class="row pOnly">鼠标灵敏度<input type="range" id="sMouseSens" min="0.2" max="3" step="0.1"><output></output></label>
     <label class="row">音量<input type="range" id="sVol" min="0" max="1" step="0.05"><output></output></label>
     <label class="row">高画质（阴影）<input type="checkbox" id="sHq"></label>
@@ -225,6 +275,7 @@ h2{font-size:24px;letter-spacing:4px;margin-bottom:12px;color:#ffb23a}
 <div id="over" class="ov">
   <div class="panel">
     <h2 style="color:#ff5a4a">战车被摧毁</h2>
+    <div id="newBest"></div>
     <div class="stats" id="stats"></div>
     <div class="btns"><button id="oAgain" class="btn primary">再来一局</button><button id="oMenu" class="btn">主菜单</button></div>
   </div>
@@ -260,15 +311,78 @@ function rayAABB(o, d, x0,y0,z0, x1,y1,z1){
   return _rmin > 0 ? _rmin : 0;
 }
 
-const IS_TOUCH = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && matchMedia('(pointer: coarse)').matches;
+/* ---- 像素风 UI 工具：字符画 → SVG、5×7 点阵字、像素圆环 ---- */
+const PAL = { k:'#140d08', w:'#ffffff', W:'#d8d0c4', o:'#ff9a1f', y:'#ffd23a', r:'#e8382c', d:'#8a1a14', g:'#5bd84a', G:'#2a8a2a',
+              b:'#5ac8ff', B:'#1f5fa8', s:'#c4c4cc', S:'#5a5a66', n:'#8a5a2a' };
+function pix(rows, sc=3, pal=PAL){
+  const h = rows.length, w = Math.max(...rows.map(r => r.length)), by = {};
+  rows.forEach((r, y) => { for(let x=0;x<r.length;x++){ const c = r[x]; if(c !== '.') (by[c] = by[c] || []).push(`M${x} ${y}h1v1h-1z`); } });
+  let s = `<svg class="px" width="${w*sc}" height="${h*sc}" viewBox="0 0 ${w} ${h}">`;
+  for(const c in by) s += `<path fill="${pal[c] || c}" d="${by[c].join('')}"/>`;
+  return s + '</svg>';
+}
+// 每个字 7 行，每行一个 32 进制字符（5 位，左边是高位）
+const FONT = {
+  '0':'ehjlphe','1':'4c4444e','2':'eh1248v','3':'v2421he','4':'26aiv22','5':'vgu11he','6':'68guhhe','7':'v124888','8':'ehhehhe','9':'ehhf12c',
+  A:'ehhvhhh',B:'uhhuhhu',C:'ehggghe',D:'sihhhis',E:'vgguggv',F:'vgguggg',G:'ehgnhhf',H:'hhhvhhh',I:'e44444e',K:'hikokih',L:'ggggggv',
+  M:'hrllhhh',N:'hhpljhh',O:'ehhhhhe',P:'uhhuggg',R:'uhhukih',S:'fgge11u',T:'v444444',U:'hhhhhhe',V:'hhhhha4',W:'hhhllla',X:'hha4ahh',
+  Y:'hha4444',Z:'v1248gv','+':'044v440','-':'000v000','/':'122488g',':':'0cc0cc0','.':'00000cc','!':'4444404',
+};
+function pxNum(str, sc=2, color='#fff'){
+  let x = 0, d = '';
+  for(const ch of String(str).toUpperCase()){
+    const g = FONT[ch]; if(!g){ x += 4; continue; }
+    for(let y=0;y<7;y++){ const v = parseInt(g[y], 32); for(let b=0;b<5;b++) if(v & (16 >> b)) d += `M${x + b} ${y}h1v1h-1z`; }
+    x += 6;
+  }
+  const w = Math.max(1, x - 1);
+  return `<svg class="px" width="${w*sc}" height="${7*sc}" viewBox="0 0 ${w} 7"><path fill="${color}" d="${d}"/></svg>`;
+}
+// n×n 网格里的像素圆环：返回 { ring:[{x,y,a}]（按顺时针角度排序）, disc:path }
+function pxRing(n, thick=2){
+  const c = (n - 1)/2, ro = n/2 - 0.3, ri = ro - thick, ring = []; let disc = '';
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
+    const d = Math.hypot(x - c, y - c);
+    if(d <= ro && d > ri) ring.push({ x, y, a:(Math.atan2(x - c, -(y - c)) + Math.PI*2) % (Math.PI*2) });
+    else if(d <= ri) disc += `M${x} ${y}h1v1h-1z`;
+  }
+  ring.sort((p, q) => p.a - q.a);
+  return { ring, disc };
+}
+const ICON = {
+  heart:['.kkk.kkk.','krrrkrrrk','krwrrrrrk','krrrrrrrk','.krrrrrk.','..krrrk..','...krk...','....k....'],
+  skull:['..kkkkk..','.kwwwwwk.','kwwwwwwwk','kwkkwkkwk','kwkkwkkwk','kwwwkwwwk','.kwwwwwk.','..kwkwk..','..kkkkk..'],
+  star:['....y....','.y..o..y.','..yoooy..','..ooyoo..','yooywyooy','..ooyoo..','..yoooy..','.y..o..y.','....y....'],
+  pause:['ww.ww','ww.ww','ww.ww','ww.ww','ww.ww'],
+  cal:['..www..','.w...w.','w..w..w','w.www.w','w..w..w','.w...w.','..www..'],
+  arrow:['kk......kk','krk....krk','krrk..krrk','.krrkkrrk.','..krrrrk..','...krrk...','....kk....'],
+  dmg:['...kk...','..kwsk..','..kssk..','.kssSSk.','.kooook.','.kooook.','.kyyyyk.','.kooook.','.kooook.','.kkkkkk.'],
+  rate:['....kkkk.','...kyyyk.','..kyyyk..','.kyyykkkk','.kyyyyyyk','.kkkyyyk.','...kyyk..','..kyyk...','..kyk....','..kk.....'],
+  cool:['....b....','..b.b.b..','...bbb...','.b..b..b.','bbbbwbbbb','.b..b..b.','...bbb...','..b.b.b..','....b....'],
+  armor:['kkkkkkkkk','ksssssssk','ksBBBBBsk','ksBwBBBsk','ksBBBBBsk','.ksBBBsk.','.ksBBBsk.','..ksBsk..','...ksk...','....k....'],
+  repair:['...kkkk...','...kggk...','...kggk...','kkkkggkkkk','kggggggggk','kggwgggggk','kkkkggkkkk','...kggk...','...kggk...','...kkkk...'],
+  twin:['kkkkkkkk.y','kSsssssoyo','kkkkkkkk.y','..........','kkkkkkkk.y','kSsssssoyo','kkkkkkkk.y','.kSSSk....','.kSSSk....','.kkkkk....'],
+  pierce:['......k...','......kk..','kkkkkkkyk.','kyyyyyyyyk','kkkkkkkyk.','......kk..','......k...'],
+  ram:['kkkk......','kssskk....','ksssssskk.','kSSSSSSSsk','ksssssskk.','kssskk....','kkkk......'],
+  engine:['kk...kk...','kok..kok..','kook.kook.','.kook.kook','kook.kook.','kok..kok..','kk...kk...'],
+  boom:['......ky..','.....k.yo.','....kk..y.','..kkkkk...','.kSSSSSk..','kSwSSSSSk.','kSSSSSSSk.','kSSSSSSSk.','.kSSSSSk..','..kkkkk...'],
+  leech:['.kkk.kkk.','kgggkgggk','kgwgggggk','kgggggggk','.kgggggk.','..kgggk..','...kgk...','....k....'],
+  head:['...kkkk...','.kkrrrrkk.','.krwwwwrk.','krwrrrrwrk','krwrkkrwrk','krwrkkrwrk','krwrrrrwrk','.krwwwwrk.','.kkrrrrkk.','...kkkk...'],
+};
+
+const IS_TOUCH = /[?&]touch\b/.test(location.search) || (('ontouchstart' in window || navigator.maxTouchPoints > 0) && matchMedia('(pointer: coarse)').matches);
 const IS_APP = !!window.Capacitor;
 if(IS_TOUCH) document.body.classList.add('touch');
 
 /* =====================================================================
    1. 设置（localStorage）
    ===================================================================== */
-const S = { gyro:true, gyroSens:1.5, dragSens:1.0, mouseSens:1.0, vol:0.8, hq:!IS_TOUCH };
-try { Object.assign(S, JSON.parse(localStorage.getItem('fp_settings') || '{}')); } catch(e){}
+const S = { v:2, gyro:false, gyroSens:1.5, dragSens:1.0, assist:true, mouseSens:1.0, vol:0.8, hq:!IS_TOUCH };
+try {
+  const old = JSON.parse(localStorage.getItem('fp_settings') || '{}');
+  if(old.v !== 2){ delete old.gyro; delete old.dragSens; old.v = 2; }   // v1 默认陀螺仪；v2 起默认滑屏
+  Object.assign(S, old);
+} catch(e){}
 const saveS = () => { try { localStorage.setItem('fp_settings', JSON.stringify(S)); } catch(e){} };
 const getBest = () => { try { return +localStorage.getItem('fp_best') || 0; } catch(e){ return 0; } };
 const setBest = v => { try { localStorage.setItem('fp_best', v); } catch(e){} };
@@ -350,7 +464,7 @@ const Sfx = {
     E.ef.frequency.setTargetAtTime(200 + speed*45, t, 0.12); E.eg.gain.setTargetAtTime(on ? 0.05 + speed*0.007 : 0, t, 0.2);
   },
 };
-let userTapped = false; addEventListener('pointerdown', () => { userTapped = true; }, { capture:true });
+let userTapped = false; addEventListener('pointerdown', e => { if(e.isTrusted) userTapped = true; }, { capture:true });
 const vibrate = ms => { try { if(IS_TOUCH && userTapped && navigator.vibrate) navigator.vibrate(ms); } catch(e){} };
 
 /* =====================================================================
@@ -1439,7 +1553,7 @@ addEventListener('mousemove', e => {
 addEventListener('mousedown', e => { if(Input.locked && e.button === 0 && Game.state === 'play') Input.firing = true; });
 addEventListener('mouseup', e => { if(e.button === 0 && !IS_TOUCH) Input.firing = false; });
 // 触屏
-const Touch = { stick:null, fire:null, look:new Map(), base:{ x:0, y:0 } };
+const Touch = { stick:null, fire:null, look:new Map(), base:{ x:0, y:0 }, swipeT:0 };
 const touchEl = $('touch'), stickEl = $('stick'), knobEl = $('knob'), fireEl = $('fireBtn');
 const STICK_R = 58;
 function stickCenter(){ const r = stickEl.getBoundingClientRect(); return { x:r.left + r.width/2, y:r.top + r.height/2 }; }
@@ -1464,11 +1578,12 @@ function moveStick(x, y){
   Input.stick.x = l > 0 ? dx/Math.min(l, STICK_R)*k : 0; Input.stick.y = l > 0 ? -dy/Math.min(l, STICK_R)*k : 0;
 }
 touchEl.addEventListener('pointermove', e => {
-  const x = e.clientX, y = e.clientY, k = 0.005*S.dragSens;
+  // 滑屏灵敏度按屏幕宽度归一化：横向划满一屏 ≈ 转 180°（不同手机手感一致）
+  const x = e.clientX, y = e.clientY, k = 3.2/Math.max(320, innerWidth)*S.dragSens, ky = k*0.8;
   if(Touch.stick && Touch.stick.id === e.pointerId){ moveStick(x, y); return; }
-  if(Touch.fire && Touch.fire.id === e.pointerId){ Input.lookDX += (x - Touch.fire.x)*k*0.8; Input.lookDY += (y - Touch.fire.y)*k*0.8; Touch.fire.x = x; Touch.fire.y = y; return; }
+  if(Touch.fire && Touch.fire.id === e.pointerId){ Input.lookDX += (x - Touch.fire.x)*k*0.8; Input.lookDY += (y - Touch.fire.y)*ky*0.8; Touch.fire.x = x; Touch.fire.y = y; Touch.swipeT = 0.15; return; }
   const L = Touch.look.get(e.pointerId);
-  if(L){ Input.lookDX += (x - L.x)*k; Input.lookDY += (y - L.y)*k; L.x = x; L.y = y; }
+  if(L){ Input.lookDX += (x - L.x)*k; Input.lookDY += (y - L.y)*ky; L.x = x; L.y = y; Touch.swipeT = 0.15; }
 }, { passive:false });
 function touchEnd(e){
   if(Touch.stick && Touch.stick.id === e.pointerId){ Touch.stick = null; Input.stick.x = Input.stick.y = 0; setKnob(0, 0); stickEl.style.left = ''; stickEl.style.top = ''; stickEl.style.bottom = ''; }
@@ -1508,6 +1623,38 @@ const Gyro = {
 };
 addEventListener('deviceorientation', Gyro.onEvent);
 
+// 瞄准辅助（只给触屏）：准星靠近僵尸时滑屏变慢一点（黏滞），滑屏/开火时轻轻往目标拉；手不动时不会自己转
+const Assist = {
+  target:null, lock:false, err:1, _d:new V3(),
+  step(dt){
+    Touch.swipeT -= dt;
+    this.lock = false; this.target = null; this.err = 1;
+    if(!IS_TOUCH || !S.assist || Car.dead) return;
+    const o = camera.position;
+    let best = null, bs = 1, bY = 0, bP = 0, bD = 0;
+    for(const z of Zombies.list){
+      if(z.dead || z.idle || z.rise < 1) continue;
+      const dx = z.pos.x - o.x, dz = z.pos.z - o.z, dy = z.pos.y + 0.9*z.s - o.y, h = Math.hypot(dx, dz);
+      if(h > 55 || h < 1.5) continue;
+      const ey = wrapA(Math.atan2(-dx, -dz) - Car.yaw), ep = Math.atan2(dy, h) - Car.pitch;
+      const r = clamp(Math.atan(1.4*z.s/h), 0.044, 0.122), e = Math.hypot(ey, ep)/r;   // 辅助半径 2.5°~7°
+      if(e < bs){ bs = e; best = z; bY = ey; bP = ep; bD = Math.hypot(h, dy); }
+    }
+    if(!best) return;
+    const ty = Car.yaw + bY, tp = Car.pitch + bP;
+    const d = this._d.set(-Math.sin(ty)*Math.cos(tp), Math.sin(tp), -Math.cos(ty)*Math.cos(tp));
+    if(World.ray(o, d, bD - best.r).hit) return;   // 被墙挡住就不辅助
+    this.lock = true; this.target = best; this.err = bs;
+    const fr = 0.6 + 0.4*bs;   // 越靠近中心越黏
+    Input.lookDX *= fr; Input.lookDY *= fr;
+    if(Touch.swipeT > 0 || Input.firing){
+      const k = 2.5*(1 - bs)*dt, cap = 0.5*dt;
+      Car.yaw += clamp(bY*k, -cap, cap);
+      Car.pitch = clamp(Car.pitch + clamp(bP*k, -cap, cap), -1.0, 0.95);
+    }
+  },
+};
+
 /* =====================================================================
    13. 波次
    ===================================================================== */
@@ -1525,7 +1672,7 @@ const Waves = {
     return q;
   },
   start(n){
-    this.n = n; this.q = this.build(n); this.phase = 'combat'; this.spawnT = 0.5; this.hpMul = 1 + 0.11*(n - 1);
+    this.n = n; this.q = this.build(n); this.total = this.q.length; this.phase = 'combat'; this.spawnT = 0.5; this.hpMul = 1 + 0.11*(n - 1);
     HUD.announce('第 ' + n + ' 波', n % 5 === 0 ? 'BOSS 来袭！' : '消灭所有僵尸', n % 5 === 0 ? '#ff5a3a' : '#ffd28a');
     Sfx.horn();
     if(n > 1) Pickups.randomSpawn();
@@ -1565,69 +1712,136 @@ const Waves = {
    14. HUD
    ===================================================================== */
 const HUD = {
-  annT:0, toastT:0, hitT:0, lastTxt:{},
+  annT:0, toastT:0, hitT:0, lastTxt:{}, lastPx:{}, segN:{}, segLit:{}, hpKey:'', lastScore:-1,
   set(id, v){ if(this.lastTxt[id] !== v){ this.lastTxt[id] = v; $(id).textContent = v; } },
-  announce(t, s, color='#fff'){ $('annT').textContent = t; $('annS').textContent = s || ''; $('annT').style.color = color; this.annT = 2.6; },
+  // 点阵字（只在内容变化时重画）
+  setPx(id, str, sc, color){ const k = str + '|' + color; if(this.lastPx[id] !== k){ this.lastPx[id] = k; $(id).innerHTML = pxNum(str, sc, color); } },
+  // 分段条：n 格，亮 lit 格
+  segs(id, n, lit){
+    const el = $(id);
+    if(this.segN[id] !== n){ this.segN[id] = n; this.segLit[id] = -1; el.innerHTML = '<b><i></i></b>'.repeat(n); }
+    if(this.segLit[id] === lit) return; this.segLit[id] = lit;
+    const ch = el.children; for(let i=0;i<n;i++) ch[i].classList.toggle('off', i >= lit);
+  },
+  announce(t, s, color='#fff'){
+    $('annT').textContent = t; $('annS').textContent = s || ''; $('annT').style.color = color; this.annT = 2.6;
+    const a = $('ann'); a.classList.remove('drop'); void a.offsetWidth; a.classList.add('drop');
+  },
   toast(t, dur=2.2){ const e = $('toast'); e.textContent = t; e.style.opacity = 1; this.toastT = dur; },
   hitmark(head, kill){ const e = $('hitm'); e.className = kill ? 'kill' : head ? 'head' : ''; this.hitT = kill ? 0.3 : 0.12; },
+  pop(txt, color){
+    const box = $('pops'); if(box.children.length > 5) box.firstChild.remove();
+    const p = document.createElement('div'); p.className = 'pop pxt'; p.innerHTML = pxNum(txt, 2, color);
+    p.style.left = (22 + Math.random()*16) + 'px'; p.addEventListener('animationend', () => p.remove());
+    box.appendChild(p);
+  },
   dmgFrom(p){
     if(!p) return;
     const dx = p.x - Car.pos.x, dz = p.z - Car.pos.z, fx = -Math.sin(Car.yaw), fz = -Math.cos(Car.yaw), rx = Math.cos(Car.yaw), rz = -Math.sin(Car.yaw);
     const a = Math.atan2(dx*rx + dz*rz, dx*fx + dz*fz);
-    const d = document.createElement('div'); d.className = 'dd'; d.style.transform = `rotate(${a}rad)`; d.innerHTML = '<i></i>'; d._t = 1;
+    const d = document.createElement('div'); d.className = 'dd'; d.style.transform = `rotate(${a}rad)`; d.innerHTML = '<span>' + ICON_ARROW + '</span>'; d._t = 1;
     $('dmgDirs').appendChild(d);
+  },
+  hpBar(){
+    const n = Math.max(1, Math.ceil(Car.maxHp/10)), hp = Math.max(0, Car.hp), key = Math.ceil(hp) + '|' + Math.ceil(Car.ghost) + '|' + n;
+    if(key === this.hpKey) return; this.hpKey = key;
+    const box = $('hpSegs');
+    if(box.children.length !== n) box.innerHTML = '<b><i></i></b>'.repeat(n);
+    const r = hp/Car.maxHp;
+    box.style.setProperty('--c', r > 0.5 ? 'var(--gn)' : r > 0.25 ? 'var(--yl)' : 'var(--rd)');
+    const ch = box.children;
+    for(let i=0;i<n;i++){ ch[i].firstChild.style.width = clamp((hp - i*10)/10, 0, 1)*100 + '%'; ch[i].classList.toggle('gh', Car.ghost > i*10 + 0.5); }
+    this.setPx('hpTxt', String(Math.ceil(hp)), 2, r > 0.25 ? '#fff' : '#ff6a5a');
   },
   update(dt){
     const hp = Car.hp/Car.maxHp;
-    $('hpFill').style.width = (hp*100) + '%'; $('hpGhost').style.width = (Car.ghost/Car.maxHp*100) + '%';
-    $('hpFill').style.background = hp > 0.5 ? 'linear-gradient(#7dff6a,#2fbf3a)' : hp > 0.25 ? 'linear-gradient(#ffe25a,#e0a020)' : 'linear-gradient(#ff6a5a,#d01e2a)';
-    this.set('hpTxt', Math.ceil(Car.hp) + '/' + Car.maxHp);
+    this.hpBar();
     $('heart').classList.toggle('low', hp < 0.3);
-    if(Waves.phase === 'combat') { this.set('waveTxt', '第 ' + Waves.n + ' 波'); this.set('subTxt', '剩余 ' + Waves.remaining()); }
-    else if(Waves.phase === 'wait'){ this.set('waveTxt', Waves.n ? '下一波' : '准备'); this.set('subTxt', Math.ceil(Waves.t) + ' 秒'); }
-    else { this.set('waveTxt', '第 ' + Waves.n + ' 波'); this.set('subTxt', '已清空'); }
-    this.set('scoreTxt', Game.score + ' 分 · 击杀 ' + Game.kills);
+    // 波次 + 剩余僵尸条
+    if(Waves.phase === 'combat'){
+      const rem = Waves.remaining();
+      this.setPx('waveTxt', 'WAVE ' + Waves.n, 3, Waves.n % 5 === 0 ? '#ff6a4a' : '#fff');
+      this.segs('remBar', 20, Math.ceil(rem/Math.max(1, Waves.total)*20 - 1e-6));
+      this.set('subTxt', '剩余 ' + rem + ' 只');
+    } else {
+      this.setPx('waveTxt', Waves.n ? 'WAVE ' + (Waves.phase === 'wait' ? Waves.n + 1 : Waves.n) : 'READY', 3, '#ffd28a');
+      if(this.segN.remBar){ $('remBar').innerHTML = ''; this.segN.remBar = 0; }
+      this.set('subTxt', Waves.phase === 'wait' ? Math.ceil(Waves.t) + ' 秒后开始' : '已清空');
+    }
+    this.setPx('scoreTxt', String(Game.score), 2, '#ffd23a');
+    if(Game.score !== this.lastScore){ if(this.lastScore >= 0 && Game.score > this.lastScore){ const s = $('scoreTxt'); s.classList.remove('bump'); void s.offsetWidth; s.classList.add('bump'); } this.lastScore = Game.score; }
+    this.set('killTxt', '击杀 ' + Game.kills);
     const b = Zombies.bossRef;
     $('bossBox').style.display = b ? 'block' : 'none';
-    if(b) $('bossFill').style.width = Math.max(0, b.hp/b.maxHp*100) + '%';
-    // 过热
-    $('heatFill').style.width = (Gun.heat*100) + '%';
-    $('heatFill').style.background = Gun.over ? '#ff4a2a' : Gun.heat > 0.7 ? '#ff8a2a' : '#ffd25a';
+    if(b) this.segs('bossSegs', 20, Math.ceil(Math.max(0, b.hp/b.maxHp)*20 - 1e-6));
+    // 过热：准星下 10 格 + 开火键外圈
+    const hs = $('heatSegs'); this.segs('heatSegs', 10, Math.ceil(Gun.heat*10 - 0.02));
+    hs.classList.toggle('over', Gun.over); hs.classList.toggle('warm', !Gun.over && Gun.heat > 0.7);
     $('heatTxt').style.opacity = Gun.over ? (Math.sin(Game.t*14) > 0 ? 1 : 0.3) : 0;
-    $('heatRing').setAttribute('stroke-dashoffset', 364.4*(1 - Gun.heat));
-    $('heatRing').setAttribute('stroke', Gun.over ? '#ff4a2a' : '#ffb23a');
-    fireEl.classList.toggle('hot', Gun.over);
-    const cross = $('cross'); cross.style.setProperty('--g', (12 + Gun.heat*10 + Gun.spin*3) + 'px'); cross.classList.toggle('hot', Gun.over);
+    FireRing.set(Gun.heat, Gun.over);
+    const cross = $('cross');
+    cross.style.setProperty('--g', (12 + Gun.heat*10 + Gun.spin*3 - (Assist.lock ? 3 : 0)) + 'px');
+    cross.classList.toggle('hot', Gun.over); cross.classList.toggle('lock', Assist.lock && !Gun.over);
     // 命中标记 / 公告 / 提示
     this.hitT -= dt; $('hitm').style.opacity = this.hitT > 0 ? 1 : 0;
     this.annT -= dt; $('ann').style.opacity = clamp(this.annT/0.5, 0, 1);
     this.toastT -= dt; if(this.toastT <= 0) $('toast').style.opacity = 0;
     $('vig').style.opacity = Math.max(Car.hurtT*0.8, hp < 0.3 ? 0.35 + Math.sin(Game.t*5)*0.15 : 0);
-    for(const d of [...$('dmgDirs').children]){ d._t -= dt; d.style.opacity = d._t; if(d._t <= 0) d.remove(); }
+    for(const d of [...$('dmgDirs').children]){ d._t -= dt; d.style.opacity = d._t > 0.5 ? 1 : d._t > 0.25 ? 0.6 : 0.3; if(d._t <= 0) d.remove(); }
     $('clickHint').style.display = !IS_TOUCH && Game.state === 'play' && !Input.locked && !Car.dead ? 'block' : 'none';
     this.radar();
   },
+  // 方形像素雷达：56×56 画布，CSS 放大 2 倍（image-rendering:pixelated）
   radar(){
-    const c = $('radar'), g = c.getContext('2d'), W = c.width, R = W/2 - 6, RANGE = 55;
+    const c = $('radar'), g = c.getContext('2d'), W = c.width, H = W/2, R = H - 3, RANGE = 55;
     g.clearRect(0, 0, W, W);
-    g.save(); g.translate(W/2, W/2);
-    g.fillStyle = 'rgba(12,18,10,.6)'; g.beginPath(); g.arc(0, 0, R + 4, 0, Math.PI*2); g.fill();
-    g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3; g.stroke();
-    g.strokeStyle = 'rgba(140,255,140,.18)'; g.lineWidth = 2; g.beginPath(); g.arc(0, 0, R*0.5, 0, Math.PI*2); g.stroke();
-    // 视野扇形
-    g.fillStyle = 'rgba(255,255,255,.08)'; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, R, -Math.PI/2 - 0.75, -Math.PI/2 + 0.75); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(14,20,10,.72)'; g.fillRect(0, 0, W, W);
+    g.fillStyle = 'rgba(140,255,140,.12)';
+    for(let i=7;i<W;i+=14){ g.fillRect(i, 0, 1, W); g.fillRect(0, i, W, 1); }
+    // 视野扇形（阶梯）
+    g.fillStyle = 'rgba(255,255,255,.1)';
+    for(let y=1;y<H;y++){ const w = Math.round((H - y)*0.93); g.fillRect(H - w, y, w*2, 1); }
     const cy = Math.cos(Car.yaw), sy = Math.sin(Car.yaw);
-    const proj = (x, z) => { const dx = x - Car.pos.x, dz = z - Car.pos.z, f = -dx*sy - dz*cy, r = dx*cy - dz*sy; let px = r/RANGE*R, py = -f/RANGE*R; const l = Math.hypot(px, py); if(l > R){ px *= R/l; py *= R/l; } return [px, py, l > R]; };
-    for(const p of Pickups.list){ const [x, y] = proj(p.g.position.x, p.g.position.z); g.fillStyle = '#6aff6a'; g.fillRect(x - 5, y - 2, 10, 4); g.fillRect(x - 2, y - 5, 4, 10); }
+    const proj = (x, z) => {
+      const dx = x - Car.pos.x, dz = z - Car.pos.z, f = -dx*sy - dz*cy, r = dx*cy - dz*sy;
+      let px = r/RANGE*R, py = -f/RANGE*R; const m = Math.max(Math.abs(px), Math.abs(py));
+      if(m > R){ px *= R/m; py *= R/m; }
+      return [Math.round(H + px), Math.round(H + py), m > R];
+    };
+    for(const p of Pickups.list){ const [x, y] = proj(p.g.position.x, p.g.position.z); g.fillStyle = '#6aff6a'; g.fillRect(x - 2, y, 5, 1); g.fillRect(x, y - 2, 1, 5); }
+    const blink = Math.sin(Game.t*10) > 0;
     for(const z of Zombies.list){
-      if(z.idle) continue;
-      const [x, y, edge] = proj(z.pos.x, z.pos.z), s = z.type === 'boss' ? 9 : z.cfg.heavy ? 6 : 4.5;
-      g.globalAlpha = edge ? 0.55 : 1; g.fillStyle = z.cfg.map; g.beginPath(); g.arc(x, y, s, 0, Math.PI*2); g.fill();
+      if(z.idle || z.dead) continue;
+      const [x, y, edge] = proj(z.pos.x, z.pos.z), s = z.type === 'boss' ? 4 : z.cfg.heavy ? 3 : 2;
+      if(z.type === 'boss' && !blink) continue;
+      g.globalAlpha = edge ? 0.55 : 1; g.fillStyle = z.cfg.map; g.fillRect(x - (s >> 1), y - (s >> 1), s, s);
     }
     g.globalAlpha = 1;
-    // 战车（车身方向）
-    g.rotate(-(Car.body - Car.yaw)); g.fillStyle = '#fff'; g.fillRect(-5, -8, 10, 16); g.fillStyle = '#ffb23a'; g.fillRect(-5, -8, 10, 4);
-    g.restore();
+    // 战车：白色方块 + 橙色车头（按车身方向取 8 个方位之一）
+    const da = wrapA(Car.body - Car.yaw), oct = Math.round(-da/(Math.PI/4));
+    g.fillStyle = '#fff'; g.fillRect(H - 2, H - 2, 4, 4);
+    g.fillStyle = '#ffb23a'; g.fillRect(H - 1 + Math.round(Math.sin(oct*Math.PI/4)*2), H - 1 - Math.round(Math.cos(oct*Math.PI/4)*2), 2, 2);
+  },
+};
+const ICON_ARROW = pix([...ICON.arrow].reverse(), 4);   // 尖朝外，指向伤害来源
+// 开火键 / 摇杆：像素圆环 SVG；开火键外圈按顺时针随热度点亮
+const FireRing = {
+  cells:[], lit:-1, over:null,
+  build(){
+    const n = 26, { ring, disc } = pxRing(n, 2);
+    let s = `<svg class="px" viewBox="0 0 ${n} ${n}"><path class="fill" fill="#ff5a1e" fill-opacity=".22" d="${disc}"/>`;
+    ring.forEach(p => { s += `<rect x="${p.x}" y="${p.y}" width="1" height="1" fill="#fff"/>`; });
+    fireEl.innerHTML = s + '</svg><span class="ic">' + pix(ICON.star, 6) + '</span>';
+    this.cells = [...fireEl.querySelectorAll('rect')];
+    const st = pxRing(30, 2);
+    let s2 = `<svg class="px" viewBox="0 0 30 30"><path fill="#000" fill-opacity=".2" d="${st.disc}"/><path fill="#fff" fill-opacity=".85" d="${st.ring.map(p => `M${p.x} ${p.y}h1v1h-1z`).join('')}"/></svg>`;
+    stickEl.insertAdjacentHTML('afterbegin', s2);
+  },
+  set(heat, over){
+    const lit = Math.round(heat*this.cells.length);
+    if(lit === this.lit && over === this.over) return; this.lit = lit; this.over = over;
+    const on = over ? '#ff3a1a' : heat > 0.7 ? '#ff8a1f' : '#ffd23a';
+    this.cells.forEach((c, i) => c.setAttribute('fill', i < lit ? on : '#fff'));
   },
 };
 
@@ -1647,7 +1861,7 @@ const Game = {
     types.forEach((t, i) => { const a = -0.9 + i*0.36, r = 9 + (i % 2)*2.5; Zombies.spawn(t, Car.pos.x + Math.sin(a)*r, Car.pos.z - Math.cos(a)*r, 1, true); });
   },
   start(){
-    Sfx.init(); Gyro.request(); Gyro.reset();
+    Sfx.init(); if(S.gyro) Gyro.request(); Gyro.reset();
     if(IS_TOUCH && !IS_APP){ try { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if(r) r.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch(e){} }
     Object.assign(Up, { dmgMul:1, rateMul:1, heatMul:1, barrels:1, pierce:0, ramMul:1, ramArmor:false, speedMul:1, boomEvery:0, leech:0, headMul:2, lv:{} });
     Car.reset(); Gun.reset(); Zombies.reset(); Waves.reset(); PL.clear(); PG.clear(); Acid.clear(); Blasts.clear(); Pickups.clear(); Tracers.clear(); BossLane.hide();
@@ -1656,7 +1870,7 @@ const Game = {
     this.showOv(null); this.setState('play');
     if(!IS_TOUCH) lockPointer();
     releaseTouches();
-    HUD.announce('准备战斗', IS_TOUCH ? (Gyro.has && S.gyro ? '转动手机瞄准 · 左摇杆移动 · 右下开火' : '滑动屏幕瞄准 · 左摇杆移动 · 右下开火') : '鼠标瞄准 · WASD 移动 · 左键开火', '#ffd28a');
+    HUD.announce('准备战斗', IS_TOUCH ? (Gyro.has && S.gyro ? '转动手机 / 滑动屏幕瞄准 · 左摇杆移动 · 右下开火' : '滑动屏幕瞄准 · 左摇杆移动 · 右下开火') : '鼠标瞄准 · WASD 移动 · 左键开火', '#ffd28a');
     if(IS_TOUCH && S.gyro) setTimeout(() => { if(!Gyro.has && Game.state === 'play') HUD.toast('没有检测到陀螺仪：请滑动屏幕转动视角', 4); }, 1500);
   },
   pause(){
@@ -1674,7 +1888,8 @@ const Game = {
   },
   onKill(z, head){
     if(z.idle) return;
-    this.kills++; this.score += Math.round(z.cfg.score*(head ? 1.5 : 1));
+    const pts = Math.round(z.cfg.score*(head ? 1.5 : 1));
+    this.kills++; this.score += pts; HUD.pop('+' + pts, head ? '#ffd23a' : '#ffffff');
     if(Up.leech) Car.heal(Up.leech);
     const drop = z.type === 'boss' ? 1 : z.type === 'brute' ? 0.25 : 0.035;
     if(Math.random() < drop) Pickups.spawn(z.pos.x, z.pos.z);
@@ -1686,8 +1901,11 @@ const Game = {
     $('upTitle').textContent = '第 ' + Waves.n + ' 波完成';
     const box = $('cards'); box.innerHTML = '';
     upgradeChoices().forEach((u, i) => {
-      const lv = Up.lv[u.id] || 0, c = document.createElement('div'); c.className = 'card';
-      c.innerHTML = `<div class="ic">${u.ic}</div><div class="nm">${u.nm}</div><div class="ds">${u.ds}</div><div class="lv">${u.max < 99 ? '等级 ' + lv + ' → ' + (lv + 1) : ''}</div>${IS_TOUCH ? '' : '<div class="k">按 ' + (i + 1) + '</div>'}`;
+      const lv = Up.lv[u.id] || 0, c = document.createElement('div'); c.className = 'card'; c.style.animationDelay = (i*0.09) + 's';
+      let pips = '';
+      if(u.max < 99){ for(let k=0;k<u.max;k++) pips += `<i class="${k < lv ? 'on' : k === lv ? 'new' : ''}"></i>`; pips = `<div class="pips">${pips}</div>`; }
+      else pips = '<div class="lv">可重复选择</div>';
+      c.innerHTML = `<div class="ic">${ICON[u.id] ? pix(ICON[u.id], 4) : u.ic}</div><div class="nm">${u.nm}</div><div class="ds">${u.ds}</div>${pips}${IS_TOUCH ? '' : '<div class="k">按 ' + (i + 1) + '</div>'}`;
       c.onclick = () => { Sfx.click(); Up.lv[u.id] = lv + 1; u.f(); this.showOv(null); this.setState('play'); Waves.phase = 'wait'; Waves.t = 3; Gyro.reset(); if(!IS_TOUCH) lockPointer(); };
       box.appendChild(c);
     });
@@ -1697,12 +1915,14 @@ const Game = {
     this.setState('over'); Sfx.engine(0, false);
     this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock(); else this.unlockOk = false;
     const best = getBest(), nb = this.score > best; if(nb) setBest(this.score);
-    $('stats').innerHTML = `<span>坚持到</span><b>第 ${Waves.n} 波</b><span>击杀</span><b>${this.kills}</b><span>得分</span><b>${this.score}</b><span>最高分</span><b>${Math.max(best, this.score)}${nb ? ' 🏆' : ''}</b>`;
+    const P = (v, c='#fff') => `<b class="pxt">${pxNum(v, 3, c)}</b>`;
+    $('stats').innerHTML = `<span>坚持到波次</span>${P(Waves.n)}<span>击杀</span>${P(this.kills)}<span>得分</span>${P(this.score, '#ffd23a')}<span>最高分</span>${P(Math.max(best, this.score), '#ffd28a')}`;
+    $('newBest').innerHTML = pxNum('NEW BEST!', 2, '#fff'); $('newBest').style.display = nb && this.score > 0 ? 'block' : 'none';
     this.showOv('over');
   },
   step(dt){
     this.t += dt;
-    Gyro.step(dt); Input.applyLook();
+    Gyro.step(dt); Assist.step(dt); Input.applyLook();
     Car.update(dt); Gun.update(dt);
     Zombies.update(dt); Acid.update(dt); Blasts.update(dt); Pickups.update(dt);
     if(!Car.dead) Waves.update(dt);
@@ -1712,9 +1932,9 @@ const Game = {
 };
 function refreshMenu(){
   $('ctrlHint').innerHTML = IS_TOUCH
-    ? '<b>转动手机</b> 瞄准（陀螺仪），也可滑动屏幕微调<br><b>左下摇杆</b> 开车移动　<b>右下按钮</b> 按住开火<br>开车直接撞僵尸也能造成伤害'
+    ? '<b>滑动屏幕</b> 瞄准（带轻度瞄准辅助）<br><b>左下摇杆</b> 开车移动　<b>右下按钮</b> 按住开火<br>开车直接撞僵尸也能造成伤害；设置里可开陀螺仪'
     : '<b>鼠标</b> 瞄准　<b>WASD</b> 开车移动　<b>左键</b> 按住开火<br><b>Esc</b> 暂停　开车直接撞僵尸也能造成伤害';
-  const b = getBest(); $('bestTxt').textContent = b ? '最高分 ' + b : '';
+  const b = getBest(); $('bestTxt').innerHTML = b ? '最高分 <span class="pxt">' + pxNum(b, 2, '#ffd25a') + '</span>' : '';
 }
 
 // 主循环
@@ -1780,24 +2000,34 @@ btn('calBtn', () => { Car.pitch = 0; Gyro.reset(); HUD.toast('视角已校准（
 function openSettings(){
   const bind = (id, key, fmt=v => v) => {
     const el = $(id), out = el.parentElement.querySelector('output');
+    const fill = () => { if(el.type === 'range') el.style.setProperty('--p', ((el.value - el.min)/(el.max - el.min)*100) + '%'); };
     if(el.type === 'checkbox') el.checked = !!S[key]; else { el.value = S[key]; if(out) out.textContent = fmt(+el.value); }
+    fill();
     el.oninput = () => {
       if(el.type === 'checkbox') S[key] = el.checked; else { S[key] = +el.value; if(out) out.textContent = fmt(+el.value); }
+      fill();
       if(key === 'vol') Sfx.setVol(S.vol);
       if(key === 'hq') applyQuality();
+      if(key === 'gyro'){ applyGyroUI(); Gyro.reset(); if(S.gyro) Gyro.request(); }
       saveS();
     };
   };
-  bind('sGyro', 'gyro'); bind('sGyroSens', 'gyroSens', v => v.toFixed(1)); bind('sDragSens', 'dragSens', v => v.toFixed(1));
+  bind('sGyro', 'gyro'); bind('sGyroSens', 'gyroSens', v => v.toFixed(1)); bind('sDragSens', 'dragSens', v => v.toFixed(1)); bind('sAssist', 'assist');
   bind('sMouseSens', 'mouseSens', v => v.toFixed(1)); bind('sVol', 'vol', v => Math.round(v*100)); bind('sHq', 'hq');
   Game.showOv('settings');
 }
 
+function applyGyroUI(){ document.body.classList.toggle('gyro-on', IS_TOUCH && !!S.gyro); }
+
 // 启动
+$('heart').innerHTML = pix(ICON.heart, 3); $('skull').innerHTML = pix(ICON.skull, 2);
+$('pauseBtn').innerHTML = pix(ICON.pause, 3); $('calBtn').innerHTML = pix(ICON.cal, 3);
+$('logoSub').innerHTML = '<span class="pxt">' + pxNum('FIREPOWER RIG', 3, '#d8c8a8') + '</span>';
+FireRing.build(); applyGyroUI();
 Car.reset(); Car.sync(); Game.menuScene(); refreshMenu(); applyQuality();
 $('loading').remove();
 requestAnimationFrame(frame);
-window.FP = { Game, Car, Gun, Zombies, Waves, Input, Up, Gyro, HUD, World, tick(sec, fn){ for(let i=0;i<sec*60;i++){ if(fn) fn(i/60); advance(1/60); } } };   // 调试用
+window.FP = { Game, Car, Gun, Zombies, Waves, Input, Up, Gyro, Assist, Touch, HUD, World, S, tick(sec, fn){ for(let i=0;i<sec*60;i++){ if(fn) fn(i/60); advance(1/60); } } };   // 调试用
 </script>
 </body>
 </html>
