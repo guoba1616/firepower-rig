@@ -1,0 +1,17 @@
+{
+  "name": "firepower-rig",
+  "version": "1.0.0",
+  "private": true,
+  "description": "火力战车 · 第一人称转管机枪战车打僵尸（网页 + Android）",
+  "scripts": {
+    "sync": "cap sync android",
+    "apk": "powershell -ExecutionPolicy Bypass -File build-apk.ps1"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.3",
+    "@capacitor/core": "^6.2.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.3"
+  }
+}

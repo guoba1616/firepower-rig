@@ -1,0 +1,6 @@
+{
+  "appId": "com.firepowerrig.game",
+  "appName": "火力战车",
+  "webDir": "docs",
+  "android": { "backgroundColor": "#14110f" }
+}
