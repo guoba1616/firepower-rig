@@ -2,6 +2,10 @@
 
 第一人称转管机枪战车，打 Blockade 里的方块僵尸（模型、配色、数值都沿用 Blockade）。
 
+游戏支持中文 / English：按系统语言自动选择，主菜单右上角或设置里可以切换。
+
+*English below.*
+
 ## 马上玩
 
 - **网页版（电脑 / 手机都能玩）：<https://guoba1616.github.io/firepower-rig/>**
@@ -45,3 +49,24 @@ powershell -ExecutionPolicy Bypass -File .\build-apk.ps1
 - 陀螺仪默认关闭。手机浏览器打开网页版时，陀螺仪需要 HTTPS（或 localhost）才能用；APK 内没有这个限制。
 - iPhone 网页版开启陀螺仪后，会在点「开始游戏」时请求权限。
 - 在电脑上测试手机界面：网址后面加 `?touch`。
+
+---
+
+## English
+
+A first-person minigun rig vs. blocky zombies (zombie models, colors and stats from Blockade). The game is in English or Chinese: it follows your system language, and you can switch it from the top-right of the main menu or in Settings.
+
+- **Play in the browser (PC or phone):** <https://guoba1616.github.io/firepower-rig/> (on a phone, turn it sideways)
+- **Android APK:** download `firepower-rig.apk` from [Releases](https://github.com/guoba1616/firepower-rig/releases/latest) and allow installs from unknown sources if asked.
+
+| | Phone | PC |
+|---|---|---|
+| Aim | Swipe the screen (light aim assist; gyro aiming is optional in Settings) | Mouse |
+| Drive | Bottom-left stick | WASD / arrow keys |
+| Fire | Bottom-right button (hold) | Left mouse button (hold) |
+| Pause | ❚❚ top right | Esc |
+
+- After each wave, pick one of three upgrades.
+- The minigun overheats if you hold fire too long; it only cools while you're not firing.
+- Ramming zombies hurts them too. Every 5th wave brings the Butcher boss: get out of the red lane when it charges.
+

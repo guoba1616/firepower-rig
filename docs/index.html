@@ -139,6 +139,12 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
 .best b{color:var(--yl);font-size:15px}
 h2{font-size:22px;font-weight:800;letter-spacing:2px;margin-bottom:14px;color:#fff}
 .row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:12px 0;font-size:15px;font-weight:600;text-align:left;color:rgba(255,255,255,.88)}
+#menu .panel{position:relative}
+.langBtn{position:absolute;top:12px;right:14px;font:inherit;font-size:13px;font-weight:700;color:rgba(255,255,255,.75);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 14px;cursor:pointer}
+.seg{display:inline-flex;margin-left:auto;background:rgba(255,255,255,.1);border-radius:999px;padding:3px}
+.seg button{font:inherit;font-size:13px;font-weight:700;border:0;border-radius:999px;padding:5px 12px;background:none;color:rgba(255,255,255,.7);cursor:pointer}
+.seg button.on{background:var(--or);color:#fff}
+html[lang=en] .logo .l1{letter-spacing:2px}
 .row output{width:34px;text-align:right;color:#ffb06a;font-weight:800}
 .row input[type=range]{-webkit-appearance:none;appearance:none;width:180px;margin-left:auto;height:24px;background:transparent;--p:50%;cursor:pointer}
 .row input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--or) var(--p),rgba(255,255,255,.16) var(--p))}
@@ -199,19 +205,19 @@ h2{font-size:22px;font-weight:800;letter-spacing:2px;margin-bottom:14px;color:#f
 <div id="hud">
   <div id="hpBox" class="sa-l card-ui"><span id="heart"></span><div id="hpBar" class="bar"><i id="hpGhost" class="gh"></i><i id="hpFill"></i></div><b id="hpTxt" class="num">100</b></div>
   <div id="scoreRow" class="sa-l card-ui"><b id="scoreTxt" class="num">0</b><span id="killTxt"></span></div>
-  <div id="waveBox" class="card-ui"><div id="waveTxt">准备</div><div id="remBar" class="bar"><i></i></div><div id="subTxt"></div></div>
-  <div id="bossBox" class="card-ui"><div id="bossName"><span>BOSS · 屠夫</span><span id="bossPct" class="num"></span></div><div id="bossBar" class="bar"><i></i></div></div>
+  <div id="waveBox" class="card-ui"><div id="waveTxt"></div><div id="remBar" class="bar"><i></i></div><div id="subTxt"></div></div>
+  <div id="bossBox" class="card-ui"><div id="bossName"><span data-en="BOSS · Butcher">BOSS · 屠夫</span><span id="bossPct" class="num"></span></div><div id="bossBar" class="bar"><i></i></div></div>
   <canvas id="radar" class="sa-r" width="208" height="208"></canvas>
   <button id="pauseBtn" class="hbtn" style="right:calc(132px + env(safe-area-inset-right))" aria-label="暂停"></button>
   <button id="calBtn" class="hbtn tOnly" style="right:calc(132px + env(safe-area-inset-right))" aria-label="校准"></button>
   <div id="cross"><i class="br l"></i><i class="dot"></i><i class="br r"></i><div id="hitm"><i></i><i></i><i></i><i></i></div></div>
-  <div id="heatBox"><div id="heatBar" class="bar"><i></i></div><div id="heatTxt">过热</div></div>
+  <div id="heatBox"><div id="heatBar" class="bar"><i></i></div><div id="heatTxt" data-en="OVERHEAT">过热</div></div>
   <div id="pops"></div>
   <div id="dmgDirs"></div>
   <div id="vig"></div>
   <div id="ann"><div id="annT"></div><div id="annS"></div></div>
   <div id="toast"></div>
-  <div id="clickHint" class="pOnly">点击画面继续操控</div>
+  <div id="clickHint" class="pOnly" data-en="Click to take control">点击画面继续操控</div>
   <div id="stick" class="tOnly"><div id="knob"></div></div>
   <div id="fireBtn" class="tOnly"></div>
 </div>
@@ -219,8 +225,9 @@ h2{font-size:22px;font-weight:800;letter-spacing:2px;margin-bottom:14px;color:#f
 <div id="menu" class="ov show">
   <div class="panel">
     <div class="logo"><span class="l1">火力战车</span><span class="l2" id="logoSub"></span></div>
-    <p class="tag">驾驶转管机枪战车，在废墟小镇里撑过一波又一波方块僵尸。</p>
-    <div class="btns"><button id="bStart" class="btn primary">开始游戏</button><button id="bSet" class="btn">设置</button></div>
+    <p class="tag" data-en="Drive a minigun rig through a ruined town and survive the blocky zombie waves.">驾驶转管机枪战车，在废墟小镇里撑过一波又一波方块僵尸。</p>
+    <div class="btns"><button id="bStart" class="btn primary" data-en="Play">开始游戏</button><button id="bSet" class="btn" data-en="Settings">设置</button></div>
+    <button id="bLang" class="langBtn"></button>
     <div class="ctrl" id="ctrlHint"></div>
     <div class="best" id="bestTxt"></div>
   </div>
@@ -228,26 +235,27 @@ h2{font-size:22px;font-weight:800;letter-spacing:2px;margin-bottom:14px;color:#f
 
 <div id="settings" class="ov">
   <div class="panel" style="min-width:min(92vw,400px)">
-    <h2>设置</h2>
-    <label class="row tOnly">滑屏灵敏度<input type="range" id="sDragSens" min="0.3" max="3" step="0.1"><output></output></label>
-    <label class="row tOnly">瞄准辅助<input type="checkbox" id="sAssist"></label>
-    <label class="row tOnly">陀螺仪瞄准（转动手机）<input type="checkbox" id="sGyro"></label>
-    <label class="row tOnly gyroOnly">陀螺仪灵敏度<input type="range" id="sGyroSens" min="0.5" max="3" step="0.1"><output></output></label>
-    <label class="row pOnly">鼠标灵敏度<input type="range" id="sMouseSens" min="0.2" max="3" step="0.1"><output></output></label>
-    <label class="row">音量<input type="range" id="sVol" min="0" max="1" step="0.05"><output></output></label>
-    <label class="row">高画质（阴影）<input type="checkbox" id="sHq"></label>
-    <div class="btns" style="margin-top:14px"><button id="sBack" class="btn primary">返回</button></div>
+    <h2 data-en="Settings">设置</h2>
+    <label class="row tOnly"><span data-en="Swipe sensitivity">滑屏灵敏度</span><input type="range" id="sDragSens" min="0.3" max="3" step="0.1"><output></output></label>
+    <label class="row tOnly"><span data-en="Aim assist">瞄准辅助</span><input type="checkbox" id="sAssist"></label>
+    <label class="row tOnly"><span data-en="Gyro aiming (tilt phone)">陀螺仪瞄准（转动手机）</span><input type="checkbox" id="sGyro"></label>
+    <label class="row tOnly gyroOnly"><span data-en="Gyro sensitivity">陀螺仪灵敏度</span><input type="range" id="sGyroSens" min="0.5" max="3" step="0.1"><output></output></label>
+    <label class="row pOnly"><span data-en="Mouse sensitivity">鼠标灵敏度</span><input type="range" id="sMouseSens" min="0.2" max="3" step="0.1"><output></output></label>
+    <label class="row"><span data-en="Volume">音量</span><input type="range" id="sVol" min="0" max="1" step="0.05"><output></output></label>
+    <label class="row"><span data-en="High quality (shadows)">高画质（阴影）</span><input type="checkbox" id="sHq"></label>
+    <div class="row"><span>语言 · Language</span><span class="seg" id="sLang"><button data-l="zh">中文</button><button data-l="en">English</button></span></div>
+    <div class="btns" style="margin-top:14px"><button id="sBack" class="btn primary" data-en="Back">返回</button></div>
   </div>
 </div>
 
 <div id="pause" class="ov">
   <div class="panel">
-    <h2>暂停</h2>
+    <h2 data-en="Paused">暂停</h2>
     <div class="btns" style="flex-direction:column;align-items:stretch">
-      <button id="pResume" class="btn primary">继续</button>
-      <button id="pSet" class="btn">设置</button>
-      <button id="pRestart" class="btn">重新开始</button>
-      <button id="pQuit" class="btn">返回主菜单</button>
+      <button id="pResume" class="btn primary" data-en="Resume">继续</button>
+      <button id="pSet" class="btn" data-en="Settings">设置</button>
+      <button id="pRestart" class="btn" data-en="Restart">重新开始</button>
+      <button id="pQuit" class="btn" data-en="Main menu">返回主菜单</button>
     </div>
   </div>
 </div>
@@ -255,21 +263,21 @@ h2{font-size:22px;font-weight:800;letter-spacing:2px;margin-bottom:14px;color:#f
 <div id="upgrade" class="ov">
   <div class="panel" style="max-width:min(96vw,640px)">
     <h2 id="upTitle">第 1 波完成</h2>
-    <div style="font-size:14px;color:#d8cbb4">选择一项战车强化</div>
+    <div style="font-size:14px;color:#d8cbb4" data-en="Choose an upgrade for your rig">选择一项战车强化</div>
     <div class="cards" id="cards"></div>
   </div>
 </div>
 
 <div id="over" class="ov">
   <div class="panel">
-    <h2 style="color:#ff5a4a">战车被摧毁</h2>
+    <h2 style="color:#ff5a4a" data-en="Rig destroyed">战车被摧毁</h2>
     <div id="newBest"></div>
     <div class="stats" id="stats"></div>
-    <div class="btns"><button id="oAgain" class="btn primary">再来一局</button><button id="oMenu" class="btn">主菜单</button></div>
+    <div class="btns"><button id="oAgain" class="btn primary" data-en="Play again">再来一局</button><button id="oMenu" class="btn" data-en="Main menu">主菜单</button></div>
   </div>
 </div>
 
-<div id="rotate"><div class="ph"></div><div>请把手机横过来</div></div>
+<div id="rotate"><div class="ph"></div><div data-en="Please rotate your phone to landscape">请把手机横过来</div></div>
 <div id="loading">LOADING…</div>
 
 <script src="three.min.js"></script>
@@ -329,12 +337,13 @@ if(IS_TOUCH) document.body.classList.add('touch');
 /* =====================================================================
    1. 设置（localStorage）
    ===================================================================== */
-const S = { v:2, gyro:false, gyroSens:1.5, dragSens:1.0, assist:true, mouseSens:1.0, vol:0.8, hq:!IS_TOUCH };
+const S = { v:2, gyro:false, gyroSens:1.5, dragSens:1.0, assist:true, mouseSens:1.0, vol:0.8, hq:!IS_TOUCH, lang:/^zh/i.test(navigator.language || '') ? 'zh' : 'en' };
 try {
   const old = JSON.parse(localStorage.getItem('fp_settings') || '{}');
   if(old.v !== 2){ delete old.gyro; delete old.dragSens; old.v = 2; }   // v1 默认陀螺仪；v2 起默认滑屏
   Object.assign(S, old);
 } catch(e){}
+const T = (zh, en) => S.lang === 'en' ? en : zh;   // 双语文本
 const saveS = () => { try { localStorage.setItem('fp_settings', JSON.stringify(S)); } catch(e){} };
 const getBest = () => { try { return +localStorage.getItem('fp_best') || 0; } catch(e){ return 0; } };
 const setBest = v => { try { localStorage.setItem('fp_best', v); } catch(e){} };
@@ -864,6 +873,14 @@ const ZT = {
             charge:{ cooldown:6.5, first:3, windup:1.1, lock:0.3, speed:19, dist:28, minD:6, maxD:38, hitR:1.0, dmg:30, kb:14, recover:1.6 } },
 };
 const ZNAME = { normal:'僵尸', runner:'奔跑僵尸', brute:'强化僵尸', exploder:'自爆僵尸', spitter:'吐酸者', boss:'屠夫' };
+const ZNAME_EN = { normal:'Zombie', runner:'Runner', brute:'Brute', exploder:'Exploder', spitter:'Spitter', boss:'Butcher' };
+const ZINFO_EN = {
+  runner:'Very fast, but fragile',
+  brute:"Tough and heavy. You can't ram it, so shoot it",
+  exploder:'Explodes next to your rig! Kill it from afar to damage nearby zombies',
+  spitter:'Spits acid from range. Drive out of the green circles',
+  boss:'Charges up a rush: get out of the red lane on the ground',
+};
 const ZINFO = {
   runner:'跑得很快，但很脆',
   brute:'血厚又重，撞不动它，用子弹解决',
@@ -1256,7 +1273,7 @@ const Pickups = {
       it.g.visible = it.life - it.t > 5 || Math.sin(it.t*16) > 0;
       const cp = carClosest(it.g.position.x, it.g.position.z);
       if(!Car.dead && Math.hypot(cp.x - it.g.position.x, cp.z - it.g.position.z) < CAR_R + 1.0){
-        const heal = 30; Car.heal(heal); Sfx.pickup(); HUD.toast('+' + heal + ' 生命'); vibrate(20);
+        const heal = 30; Car.heal(heal); Sfx.pickup(); HUD.toast('+' + heal + T(' 生命', ' HP')); vibrate(20);
         for(let k=0;k<12;k++) PG.spawn(it.g.position.x, 1, it.g.position.z, rand(-2, 2), rand(2, 5), rand(-2, 2), 0.12, 0x6aff6a, 0.6, 6);
         this.remove(i); continue;
       }
@@ -1294,6 +1311,13 @@ const Tracers = {
    10. 强化（每波结束三选一）
    ===================================================================== */
 const Up = { dmgMul:1, rateMul:1, heatMul:1, barrels:1, pierce:0, ramMul:1, ramArmor:false, speedMul:1, boomEvery:0, leech:0, headMul:2, lv:{} };
+const UP_EN = {
+  dmg:['AP Cores','Bullet damage +20%'], rate:['Rapid Action','Fire rate +15%'], cool:['Liquid Cooling','Barrel heat-up -25%'],
+  armor:['Composite Armor','Max HP +25, heals 25'], repair:['Field Repair','Heal 60% HP now'], twin:['Twin Barrels','Extra barrel set: +1 bullet per shot'],
+  pierce:['Piercing Rounds','Bullets pierce 1 more zombie'], ram:['Steel Ram','Ram damage +60%, no damage from ramming heavies'],
+  engine:['Turbo Engine','Move speed +12%'], boom:['Explosive Rounds','Every few shots is explosive (area damage)'],
+  leech:['Salvage System','Heal 1 HP per kill'], head:['Precision Sights','Headshot damage +50%'],
+};
 const UPGRADES = [
   { id:'dmg',    ic:'💥', nm:'穿甲弹芯', ds:'子弹伤害 +20%', max:8, f(){ Up.dmgMul *= 1.2; } },
   { id:'rate',   ic:'⚡', nm:'高速枪机', ds:'射速 +15%', max:6, f(){ Up.rateMul *= 1.15; } },
@@ -1395,7 +1419,7 @@ const Gun = {
       this.fireT = Math.max(this.fireT, -0.05) + 0.085/Up.rateMul;
       this.fire(); this.idleT = 0;
       this.heat += 0.021*Up.heatMul;
-      if(this.heat >= 1){ this.heat = 1; this.over = true; Sfx.overheat(); HUD.toast('枪管过热！等待冷却'); }
+      if(this.heat >= 1){ this.heat = 1; this.over = true; Sfx.overheat(); HUD.toast(T('枪管过热！等待冷却', 'Overheated! Wait for it to cool')); }
     }
     this.flashT -= dt;
     const show = this.flashT > 0;
@@ -1625,7 +1649,7 @@ const Waves = {
   },
   start(n){
     this.n = n; this.q = this.build(n); this.total = this.q.length; this.phase = 'combat'; this.spawnT = 0.5; this.hpMul = 1 + 0.11*(n - 1);
-    HUD.announce('第 ' + n + ' 波', n % 5 === 0 ? 'BOSS 来袭！' : '消灭所有僵尸', n % 5 === 0 ? '#ff5a3a' : '#ffd28a');
+    HUD.announce(T('第 ' + n + ' 波', 'WAVE ' + n), n % 5 === 0 ? T('BOSS 来袭！', 'BOSS INCOMING!') : T('消灭所有僵尸', 'Kill all zombies'), n % 5 === 0 ? '#ff5a3a' : '#ffd28a');
     Sfx.horn();
     if(n > 1) Pickups.randomSpawn();
   },
@@ -1638,7 +1662,7 @@ const Waves = {
       const p = { x, z }; if(World.pushOut(p, 1.2*ZT[type].scale)) continue;
       const hp = type === 'boss' ? 1 + 0.5*(this.n/5 - 1) : this.hpMul;
       const zz = Zombies.spawn(type, x, z, hp);
-      if(zz && !this.seen[type]){ this.seen[type] = true; if(ZINFO[type]) HUD.toast('新敌人 · ' + ZNAME[type] + '：' + ZINFO[type], 5); }
+      if(zz && !this.seen[type]){ this.seen[type] = true; if(ZINFO[type]) HUD.toast(T('新敌人 · ' + ZNAME[type] + '：' + ZINFO[type], 'New enemy · ' + ZNAME_EN[type] + ': ' + ZINFO_EN[type]), 5); }
       if(zz && type === 'boss'){ Sfx.roar(); Cam.trauma(0.4); }
       return !!zz;
     }
@@ -1653,7 +1677,7 @@ const Waves = {
         if(this.spawnOne(this.q[0])) this.q.shift();
         this.spawnT = Math.max(0.3, 1.25 - this.n*0.06)*rand(0.6, 1.4);
       }
-      if(!this.q.length && !Zombies.list.length){ this.phase = 'clear'; this.t = 1.8; HUD.announce('第 ' + this.n + ' 波 完成', '+' + (this.n*100) + ' 分', '#7dff6a'); Game.score += this.n*100; Sfx.pickup(); }
+      if(!this.q.length && !Zombies.list.length){ this.phase = 'clear'; this.t = 1.8; HUD.announce(T('第 ' + this.n + ' 波 完成', 'WAVE ' + this.n + ' CLEAR'), '+' + (this.n*100) + T(' 分', ' pts'), '#7dff6a'); Game.score += this.n*100; Sfx.pickup(); }
       return;
     }
     if(this.phase === 'clear'){ this.t -= dt; if(this.t <= 0 && !Car.dead) Game.showUpgrade(); }
@@ -1698,17 +1722,18 @@ const HUD = {
     const rb = $('remBar');
     if(Waves.phase === 'combat'){
       const rem = Waves.remaining();
-      this.set('waveTxt', '第 ' + Waves.n + ' 波');
+      this.set('waveTxt', T('第 ' + Waves.n + ' 波', 'Wave ' + Waves.n));
       rb.style.display = ''; this.bar(rb.firstChild, 'rem', rem/Math.max(1, Waves.total));
-      this.set('subTxt', '剩余 ' + rem + ' 只');
+      this.set('subTxt', T('剩余 ' + rem + ' 只', rem + ' left'));
     } else {
-      this.set('waveTxt', Waves.n ? (Waves.phase === 'wait' ? '第 ' + (Waves.n + 1) + ' 波' : '第 ' + Waves.n + ' 波') : '准备');
+      const wn = Waves.phase === 'wait' ? Waves.n + 1 : Waves.n;
+      this.set('waveTxt', Waves.n ? T('第 ' + wn + ' 波', 'Wave ' + wn) : T('准备', 'Get ready'));
       rb.style.display = 'none';
-      this.set('subTxt', Waves.phase === 'wait' ? Math.ceil(Waves.t) + ' 秒后开始' : '已清空');
+      this.set('subTxt', Waves.phase === 'wait' ? T(Math.ceil(Waves.t) + ' 秒后开始', 'Starts in ' + Math.ceil(Waves.t)) : T('已清空', 'Cleared'));
     }
     this.set('scoreTxt', String(Game.score));
     if(Game.score !== this.lastScore){ if(this.lastScore >= 0 && Game.score > this.lastScore){ const s = $('scoreTxt'); s.classList.remove('bump'); void s.offsetWidth; s.classList.add('bump'); } this.lastScore = Game.score; }
-    this.set('killTxt', '击杀 ' + Game.kills);
+    this.set('killTxt', T('击杀 ', 'Kills ') + Game.kills);
     const b = Zombies.bossRef;
     $('bossBox').style.display = b ? 'block' : 'none';
     if(b){ const f = Math.max(0, b.hp/b.maxHp); this.bar($('bossBar').firstChild, 'boss', f); this.set('bossPct', Math.ceil(f*100) + '%'); }
@@ -1805,8 +1830,8 @@ const Game = {
     this.showOv(null); this.setState('play');
     if(!IS_TOUCH) lockPointer();
     releaseTouches();
-    HUD.announce('准备战斗', IS_TOUCH ? (Gyro.has && S.gyro ? '转动手机 / 滑动屏幕瞄准 · 左摇杆移动 · 右下开火' : '滑动屏幕瞄准 · 左摇杆移动 · 右下开火') : '鼠标瞄准 · WASD 移动 · 左键开火', '#ffd28a');
-    if(IS_TOUCH && S.gyro) setTimeout(() => { if(!Gyro.has && Game.state === 'play') HUD.toast('没有检测到陀螺仪：请滑动屏幕转动视角', 4); }, 1500);
+    HUD.announce(T('准备战斗', 'GET READY'), IS_TOUCH ? (Gyro.has && S.gyro ? T('转动手机 / 滑动屏幕瞄准 · 左摇杆移动 · 右下开火', 'Tilt / swipe to aim · Left stick to drive · Bottom-right to fire') : T('滑动屏幕瞄准 · 左摇杆移动 · 右下开火', 'Swipe to aim · Left stick to drive · Bottom-right to fire')) : T('鼠标瞄准 · WASD 移动 · 左键开火', 'Mouse to aim · WASD to drive · Left click to fire'), '#ffd28a');
+    if(IS_TOUCH && S.gyro) setTimeout(() => { if(!Gyro.has && Game.state === 'play') HUD.toast(T('没有检测到陀螺仪：请滑动屏幕转动视角', 'No gyroscope found: swipe the screen to aim'), 4); }, 1500);
   },
   pause(){
     if(this.state !== 'play') return;
@@ -1828,19 +1853,19 @@ const Game = {
     if(Up.leech) Car.heal(Up.leech);
     const drop = z.type === 'boss' ? 1 : z.type === 'brute' ? 0.25 : 0.035;
     if(Math.random() < drop) Pickups.spawn(z.pos.x, z.pos.z);
-    if(z.type === 'boss'){ HUD.announce('BOSS 已击败！', '+' + z.cfg.score + ' 分', '#ffd25a'); Cam.trauma(0.6); vibrate([60, 30, 60]); }
+    if(z.type === 'boss'){ HUD.announce(T('BOSS 已击败！', 'BOSS DEFEATED!'), '+' + z.cfg.score + T(' 分', ' pts'), '#ffd25a'); Cam.trauma(0.6); vibrate([60, 30, 60]); }
   },
   showUpgrade(){
     this.setState('upgrade'); Input.firing = false; releaseTouches(); Sfx.engine(0, false);
     this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock(); else this.unlockOk = false;
-    $('upTitle').textContent = '第 ' + Waves.n + ' 波完成';
+    $('upTitle').textContent = T('第 ' + Waves.n + ' 波完成', 'Wave ' + Waves.n + ' complete');
     const box = $('cards'); box.innerHTML = '';
     upgradeChoices().forEach((u, i) => {
       const lv = Up.lv[u.id] || 0, c = document.createElement('div'); c.className = 'card'; c.style.animationDelay = (i*0.09) + 's';
       let pips = '';
       if(u.max < 99){ for(let k=0;k<u.max;k++) pips += `<i class="${k < lv ? 'on' : k === lv ? 'new' : ''}"></i>`; pips = `<div class="pips">${pips}</div>`; }
-      else pips = '<div class="lv">可重复选择</div>';
-      c.innerHTML = `<div class="ic" style="--ic:${ICON[u.id] ? ICON[u.id][2] : '#555'}">${ICON[u.id] ? ico(u.id, 30) : u.ic}</div><div class="nm">${u.nm}</div><div class="ds">${u.ds}</div>${pips}${IS_TOUCH ? '' : '<div class="k">按 ' + (i + 1) + '</div>'}`;
+      else pips = '<div class="lv">' + T('可重复选择', 'Can pick again') + '</div>';
+      c.innerHTML = `<div class="ic" style="--ic:${ICON[u.id] ? ICON[u.id][2] : '#555'}">${ICON[u.id] ? ico(u.id, 30) : u.ic}</div><div class="nm">${T(u.nm, UP_EN[u.id][0])}</div><div class="ds">${T(u.ds, UP_EN[u.id][1])}</div>${pips}${IS_TOUCH ? '' : '<div class="k">' + T('按 ', 'Press ') + (i + 1) + '</div>'}`;
       c.onclick = () => { Sfx.click(); Up.lv[u.id] = lv + 1; u.f(); this.showOv(null); this.setState('play'); Waves.phase = 'wait'; Waves.t = 3; Gyro.reset(); if(!IS_TOUCH) lockPointer(); };
       box.appendChild(c);
     });
@@ -1850,8 +1875,8 @@ const Game = {
     this.setState('over'); Sfx.engine(0, false);
     this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock(); else this.unlockOk = false;
     const best = getBest(), nb = this.score > best; if(nb) setBest(this.score);
-    $('stats').innerHTML = `<span>坚持到</span><b class="num">第 ${Waves.n} 波</b><span>击杀</span><b class="num">${this.kills}</b><span>得分</span><b class="num hl">${this.score}</b><span>最高分</span><b class="num">${Math.max(best, this.score)}</b>`;
-    $('newBest').textContent = '新纪录！'; $('newBest').style.display = nb && this.score > 0 ? 'block' : 'none';
+    $('stats').innerHTML = `<span>${T('坚持到', 'Reached')}</span><b class="num">${T('第 ' + Waves.n + ' 波', 'Wave ' + Waves.n)}</b><span>${T('击杀', 'Kills')}</span><b class="num">${this.kills}</b><span>${T('得分', 'Score')}</span><b class="num hl">${this.score}</b><span>${T('最高分', 'Best')}</span><b class="num">${Math.max(best, this.score)}</b>`;
+    $('newBest').textContent = T('新纪录！', 'NEW BEST!'); $('newBest').style.display = nb && this.score > 0 ? 'block' : 'none';
     this.showOv('over');
   },
   step(dt){
@@ -1866,9 +1891,11 @@ const Game = {
 };
 function refreshMenu(){
   $('ctrlHint').innerHTML = IS_TOUCH
-    ? '<b>滑动屏幕</b> 瞄准（带轻度瞄准辅助）<br><b>左下摇杆</b> 开车移动　<b>右下按钮</b> 按住开火<br>开车直接撞僵尸也能造成伤害；设置里可开陀螺仪'
-    : '<b>鼠标</b> 瞄准　<b>WASD</b> 开车移动　<b>左键</b> 按住开火<br><b>Esc</b> 暂停　开车直接撞僵尸也能造成伤害';
-  const b = getBest(); $('bestTxt').innerHTML = b ? '最高分 <b class="num">' + b + '</b>' : '';
+    ? T('<b>滑动屏幕</b> 瞄准（带轻度瞄准辅助）<br><b>左下摇杆</b> 开车移动　<b>右下按钮</b> 按住开火<br>开车直接撞僵尸也能造成伤害；设置里可开陀螺仪',
+        '<b>Swipe</b> to aim (light aim assist)<br><b>Left stick</b> to drive　<b>Bottom-right button</b> hold to fire<br>Ramming zombies also hurts them. Gyro aiming is in Settings')
+    : T('<b>鼠标</b> 瞄准　<b>WASD</b> 开车移动　<b>左键</b> 按住开火<br><b>Esc</b> 暂停　开车直接撞僵尸也能造成伤害',
+        '<b>Mouse</b> to aim　<b>WASD</b> to drive　<b>Left click</b> hold to fire<br><b>Esc</b> to pause　Ramming zombies also hurts them');
+  const b = getBest(); $('bestTxt').innerHTML = b ? T('最高分 ', 'Best ') + '<b class="num">' + b + '</b>' : '';
 }
 
 // 主循环
@@ -1918,7 +1945,7 @@ document.addEventListener('visibilitychange', () => { if(document.hidden){ Game.
 /* =====================================================================
    16. 菜单 / 设置 绑定
    ===================================================================== */
-const btn = (id, fn) => $(id).addEventListener('click', e => { e.stopPropagation(); Sfx.init(); Sfx.click(); fn(); });
+const btn = (id, fn) => (typeof id === 'string' ? $(id) : id).addEventListener('click', e => { e.stopPropagation(); Sfx.init(); Sfx.click(); fn(); });
 let settingsBack = 'menu';
 btn('bStart', () => Game.start());
 btn('bSet', () => { settingsBack = 'menu'; openSettings(); });
@@ -1930,7 +1957,7 @@ btn('oAgain', () => Game.start());
 btn('oMenu', () => Game.quit());
 btn('sBack', () => { saveS(); Game.showOv(settingsBack); });
 btn('pauseBtn', () => Game.pause());
-btn('calBtn', () => { Car.pitch = 0; Gyro.reset(); HUD.toast('视角已校准（水平）'); });
+btn('calBtn', () => { Car.pitch = 0; Gyro.reset(); HUD.toast(T('视角已校准（水平）', 'View recalibrated (level)')); });
 function openSettings(){
   const bind = (id, key, fmt=v => v) => {
     const el = $(id), out = el.parentElement.querySelector('output');
@@ -1951,14 +1978,27 @@ function openSettings(){
   Game.showOv('settings');
 }
 
+function applyLang(){
+  const en = S.lang === 'en';
+  document.documentElement.lang = en ? 'en' : 'zh-CN';
+  document.title = en ? 'Firepower Rig · 火力战车' : '火力战车 · Firepower Rig';
+  for(const e of document.querySelectorAll('[data-en]')){ if(e.dataset.zh === undefined) e.dataset.zh = e.textContent; e.textContent = en ? e.dataset.en : e.dataset.zh; }
+  $('pauseBtn').setAttribute('aria-label', T('暂停', 'Pause')); $('calBtn').setAttribute('aria-label', T('校准', 'Recalibrate'));
+  document.querySelector('.logo .l1').textContent = T('火力战车', 'FIREPOWER RIG'); $('logoSub').textContent = T('FIREPOWER RIG', '火力战车');
+  $('bLang').textContent = en ? '中文' : 'English';
+  for(const b of $('sLang').children) b.classList.toggle('on', b.dataset.l === S.lang);
+  HUD.lastTxt = {}; refreshMenu();
+}
+const setLang = l => { S.lang = l; saveS(); applyLang(); };
+btn('bLang', () => setLang(S.lang === 'en' ? 'zh' : 'en'));
+for(const b of $('sLang').children) btn(b, () => setLang(b.dataset.l));
 function applyGyroUI(){ document.body.classList.toggle('gyro-on', IS_TOUCH && !!S.gyro); }
 
 // 启动
 $('heart').innerHTML = ico('heart', 22);
 $('pauseBtn').innerHTML = ico('pause', 22); $('calBtn').innerHTML = ico('cal', 22);
-$('logoSub').textContent = 'FIREPOWER RIG';
 FireRing.build(); applyGyroUI();
-Car.reset(); Car.sync(); Game.menuScene(); refreshMenu(); applyQuality();
+Car.reset(); Car.sync(); Game.menuScene(); applyLang(); applyQuality();
 $('loading').remove();
 requestAnimationFrame(frame);
 window.FP = { Game, Car, Gun, Zombies, Waves, Input, Up, Gyro, Assist, Touch, HUD, World, S, tick(sec, fn){ for(let i=0;i<sec*60;i++){ if(fn) fn(i/60); advance(1/60); } } };   // 调试用
