@@ -26,172 +26,164 @@ body.touch .pOnly{display:none!important}
 .sa-l{left:calc(16px + env(safe-area-inset-left))}
 .sa-r{right:calc(16px + env(safe-area-inset-right))}
 
-/* ===== 方块像素风 ===== */
-:root{--k:#140d08;--or:#ff9a1f;--yl:#ffd23a;--rd:#e8382c;--gn:#5bd84a}
-svg.px{display:block;shape-rendering:crispEdges}
-.pxt{display:inline-block;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.85))}
-.pxs{text-shadow:2px 2px 0 #000}
-/* 缺角黑边：四条边各画一条、四个角空着 → 像素圆角 */
-.pxb{box-shadow:0 -3px 0 0 var(--k),0 3px 0 0 var(--k),-3px 0 0 0 var(--k),3px 0 0 0 var(--k)}
-.segs{display:flex;gap:2px;padding:3px;background:rgba(10,6,4,.62)}
-.segs b{flex:1;position:relative;background:#3b2c22;overflow:hidden}
-.segs b i{position:absolute;left:0;top:0;bottom:0;width:100%;background:var(--c);box-shadow:inset 0 3px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.25)}
-.segs b.off i{display:none}
+/* ===== 现代手游风：圆角半透明深色卡片 + 亮色强调 ===== */
+:root{--card:rgba(14,18,28,.6);--card2:rgba(20,24,36,.95);--or:#ff7a2f;--gn:#3ddc84;--yl:#ffc23a;--rd:#ff4d5e}
+.card-ui{background:var(--card);border-radius:14px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.num{font-weight:800;font-variant-numeric:tabular-nums}
+.bar{position:relative;height:10px;border-radius:6px;background:rgba(255,255,255,.16);overflow:hidden}
+.bar>i{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:6px;transition:width .15s}
+.bar>i.gh{background:rgba(255,255,255,.75);transition:width .45s .2s}
 
-/* 左上：像素心 + 分段血条（每格 10 HP） */
-#hpBox{position:absolute;top:16px;display:flex;align-items:center;gap:12px}
-#heart{filter:drop-shadow(2px 2px 0 rgba(0,0,0,.7))}
-#heart.low{animation:beat .5s steps(1) infinite}
-@keyframes beat{50%{transform:scale(1.25)}}
-#hpSegs{width:min(24vw,260px);height:22px;--c:var(--gn)}
-#hpSegs b.gh{background:#f4ede0}
-#hpTxt{min-width:40px}
-
-/* 顶部中间：波次 / 剩余僵尸 / 分数 */
-#waveBox{position:absolute;left:50%;top:12px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px}
-#remBar{width:min(21vw,200px);height:11px;padding:2px;--c:var(--rd)}
-#remBar:empty{display:none}
-#subTxt{font-size:12px;font-weight:800;opacity:.92}
-#scoreRow{position:absolute;top:50px;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:800;margin-left:39px}
-#scoreTxt{transform-origin:0 50%}
-#scoreTxt.bump{animation:bump .25s steps(2)}
+/* 左上：血量 + 分数 */
+#hpBox{position:absolute;top:12px;display:flex;align-items:center;gap:10px;padding:8px 14px 8px 11px}
+#heart{color:var(--rd);display:flex}
+#heart.low{animation:beat .6s infinite}
+@keyframes beat{0%,100%{transform:scale(1)}40%{transform:scale(1.25)}}
+#hpBar{width:min(20vw,220px);height:12px}
+#hpFill{background:var(--gn)}
+#hpTxt{font-size:16px;min-width:30px}
+#scoreRow{position:absolute;top:60px;display:flex;align-items:center;gap:10px;padding:5px 12px;font-size:12px;font-weight:700;color:rgba(255,255,255,.72)}
+#scoreTxt{font-size:15px;color:var(--yl);transform-origin:0 50%}
+#scoreTxt.bump{animation:bump .25s ease-out}
 @keyframes bump{0%{transform:scale(1.35)}}
-#bossBox{position:absolute;left:50%;top:86px;transform:translateX(-50%);width:min(46vw,420px);display:none}
-#bossName{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:900;color:#ff6a5a;margin-bottom:6px;letter-spacing:1px}
-#bossSegs{height:14px;--c:var(--rd)}
 
-#radar{position:absolute;top:16px;width:112px;height:112px;image-rendering:pixelated}
-.hbtn{position:absolute;pointer-events:auto;background:rgba(30,22,16,.78);border:0;width:44px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;
-  box-shadow:inset 3px 3px 0 rgba(255,255,255,.18),inset -3px -3px 0 rgba(0,0,0,.45),0 -3px 0 0 var(--k),0 3px 0 0 var(--k),-3px 0 0 0 var(--k),3px 0 0 0 var(--k);touch-action:manipulation}
-.hbtn:active{transform:translateY(2px);background:rgba(90,66,44,.9)}
-#pauseBtn{top:18px}
-#calBtn{top:70px}
+/* 顶部中间：波次 */
+#waveBox{position:absolute;left:50%;top:12px;transform:translateX(-50%);text-align:center;padding:6px 18px 7px;min-width:150px}
+#waveTxt{font-size:17px;font-weight:800;letter-spacing:1px}
+#remBar{height:6px;margin:5px 0 4px}
+#remBar>i{background:var(--rd)}
+#subTxt{font-size:12px;font-weight:700;color:var(--yl)}
+#bossBox{position:absolute;left:50%;top:98px;transform:translateX(-50%);width:min(44vw,400px);display:none;padding:7px 14px 10px}
+#bossName{display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:#ff8f8f;margin-bottom:6px;letter-spacing:1px}
+#bossBar>i{background:var(--rd)}
+
+/* 右上：雷达 + 按钮 */
+#radar{position:absolute;top:12px;width:104px;height:104px;border-radius:18px}
+.hbtn{position:absolute;pointer-events:auto;background:var(--card);border:0;border-radius:14px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;
+  touch-action:manipulation;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:transform .1s}
+.hbtn:active{transform:scale(.9);background:rgba(255,255,255,.25)}
+#pauseBtn{top:12px}
+#calBtn{top:64px}
 body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
 
-/* 准星：[ · ]（按草图），有瞄准辅助目标时变红收紧 */
+/* 准星 [ · ]：有瞄准辅助目标时变红收紧 */
 #cross{position:absolute;left:50%;top:50%;width:0;height:0;--g:14px}
-#cross .br{position:absolute;top:-15px;width:9px;height:30px;border:3px solid rgba(255,255,255,.95);filter:drop-shadow(2px 2px 0 rgba(0,0,0,.75))}
-#cross .l{left:calc(-1*var(--g) - 9px);border-right:none}
-#cross .r{left:var(--g);border-left:none}
-#cross .dot{position:absolute;left:-3px;top:-3px;width:6px;height:6px;background:#fff;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.75))}
+#cross .br{position:absolute;top:-14px;width:8px;height:28px;border:2.5px solid rgba(255,255,255,.95);border-radius:3px;filter:drop-shadow(0 0 2px rgba(0,0,0,.7));transition:border-color .1s}
+#cross .l{left:calc(-1*var(--g) - 8px);border-right:none;border-radius:3px 0 0 3px}
+#cross .r{left:var(--g);border-left:none;border-radius:0 3px 3px 0}
+#cross .dot{position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:#fff;filter:drop-shadow(0 0 2px rgba(0,0,0,.7))}
 #cross.hot .br{border-color:#ff8a3a}
-#cross.lock .br{border-color:#ff4a3a}
-#cross.lock .dot{background:#ff4a3a}
+#cross.lock .br{border-color:var(--rd)}
+#cross.lock .dot{background:var(--rd)}
 #hitm{position:absolute;left:0;top:0;opacity:0}
-#hitm i{position:absolute;width:4px;height:10px;background:#fff;left:-2px;top:-5px}
-#hitm i:nth-child(1){transform:rotate(45deg) translateY(-17px)}
-#hitm i:nth-child(2){transform:rotate(135deg) translateY(-17px)}
-#hitm i:nth-child(3){transform:rotate(225deg) translateY(-17px)}
-#hitm i:nth-child(4){transform:rotate(315deg) translateY(-17px)}
-#hitm.kill i{background:#ff3a3a;height:14px}
-#hitm.head i{background:#ffd23a}
-#heatBox{position:absolute;left:50%;top:calc(50% + 32px);transform:translateX(-50%);width:96px;text-align:center}
-#heatSegs{height:10px;padding:2px;--c:var(--yl)}
-#heatSegs.warm{--c:var(--or)}
-#heatSegs.over{--c:#ff3a1a}
-#heatTxt{font-size:13px;font-weight:900;color:#ff4a2a;opacity:0;letter-spacing:3px;margin-top:4px}
+#hitm i{position:absolute;width:3px;height:10px;border-radius:2px;background:#fff;left:-1.5px;top:-5px}
+#hitm i:nth-child(1){transform:rotate(45deg) translateY(-16px)}
+#hitm i:nth-child(2){transform:rotate(135deg) translateY(-16px)}
+#hitm i:nth-child(3){transform:rotate(225deg) translateY(-16px)}
+#hitm i:nth-child(4){transform:rotate(315deg) translateY(-16px)}
+#hitm.kill i{background:var(--rd);height:13px}
+#hitm.head i{background:var(--yl)}
+#heatBox{position:absolute;left:50%;top:calc(50% + 30px);transform:translateX(-50%);width:76px;text-align:center}
+#heatBar{height:5px;background:rgba(0,0,0,.35)}
+#heatBar>i{background:var(--yl)}
+#heatBar.warm>i{background:var(--or)}
+#heatBar.over>i{background:#ff3a2a}
+#heatTxt{font-size:12px;font-weight:800;color:#ff5a3a;opacity:0;letter-spacing:2px;margin-top:4px;text-shadow:0 1px 3px #000}
 #pops{position:absolute;left:50%;top:50%;width:0;height:0}
-.pop{position:absolute;left:26px;top:-36px;animation:pop .8s steps(8) forwards}
-@keyframes pop{0%{transform:translateY(6px) scale(1.3)}25%{transform:translateY(0) scale(1)}100%{transform:translateY(-30px);opacity:0}}
+.pop{position:absolute;left:26px;top:-38px;font-size:16px;font-weight:800;white-space:nowrap;text-shadow:0 2px 5px rgba(0,0,0,.7);animation:pop .8s ease-out forwards}
+@keyframes pop{0%{transform:translateY(8px) scale(1.3);opacity:0}20%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-26px);opacity:0}}
 
 #dmgDirs{position:absolute;left:50%;top:50%;width:0;height:0}
 .dd{position:absolute;left:0;top:0;width:0;height:0}
-.dd span{position:absolute;left:-20px;top:-114px}
+.dd span{position:absolute;left:-22px;top:-118px;color:var(--rd);filter:drop-shadow(0 0 5px rgba(255,40,40,.7))}
 #vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(200,0,0,.75) 100%);opacity:0}
-#ann{position:absolute;left:0;right:0;top:22%;text-align:center;opacity:0}
-#ann.drop{animation:drop .4s steps(4)}
-@keyframes drop{0%{transform:translateY(-60px)}}
-#annT{font-size:clamp(28px,6vw,54px);font-weight:900;letter-spacing:4px;text-shadow:3px 3px 0 #000,6px 6px 0 rgba(0,0,0,.35)}
-#annS{font-size:clamp(13px,2.4vw,18px);margin-top:8px;font-weight:800;text-shadow:2px 2px 0 #000}
-#toast{position:absolute;left:50%;top:calc(50% + 76px);transform:translateX(-50%);background:rgba(20,14,10,.86);
-  box-shadow:inset 4px 0 0 var(--or),0 -3px 0 0 var(--k),0 3px 0 0 var(--k),-3px 0 0 0 var(--k),3px 0 0 0 var(--k);
-  padding:8px 14px 8px 18px;font-size:14px;font-weight:700;max-width:80vw;opacity:0;transition:opacity .3s steps(3);white-space:nowrap}
-#clickHint{position:absolute;left:50%;top:62%;transform:translateX(-50%);background:rgba(20,14,10,.86);padding:10px 18px;font-weight:800;display:none;
-  box-shadow:0 -3px 0 0 var(--k),0 3px 0 0 var(--k),-3px 0 0 0 var(--k),3px 0 0 0 var(--k)}
+#ann{position:absolute;left:0;right:0;top:23%;text-align:center;opacity:0}
+#ann.drop{animation:drop .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes drop{0%{transform:translateY(-24px) scale(.92)}}
+#annT{font-size:clamp(28px,6vw,52px);font-weight:900;letter-spacing:3px;text-shadow:0 3px 12px rgba(0,0,0,.65)}
+#annS{font-size:clamp(13px,2.4vw,17px);margin-top:6px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.7)}
+#toast{position:absolute;left:50%;top:calc(50% + 72px);transform:translateX(-50%);background:var(--card2);border-radius:999px;
+  padding:9px 18px;font-size:14px;font-weight:700;max-width:80vw;opacity:0;transition:opacity .3s;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+#clickHint{position:absolute;left:50%;top:62%;transform:translateX(-50%);background:var(--card2);padding:10px 20px;border-radius:999px;font-weight:800;display:none}
 
-/* 左下摇杆 / 右下开火（像素圆环，开火键外圈兼作过热指示） */
-#stick{position:absolute;left:calc(40px + env(safe-area-inset-left));bottom:34px;width:150px;height:150px}
-#stick>svg,#fireBtn>svg{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.45))}
-#knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;background:rgba(255,255,255,.3);
-  box-shadow:inset 4px 4px 0 rgba(255,255,255,.45),inset -4px -4px 0 rgba(0,0,0,.25),0 -3px 0 0 #fff,0 3px 0 0 #fff,-3px 0 0 0 #fff,3px 0 0 0 #fff}
-#fireBtn{position:absolute;right:calc(44px + env(safe-area-inset-right));bottom:44px;width:128px;height:128px}
-#fireBtn .ic{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);filter:drop-shadow(3px 3px 0 rgba(0,0,0,.45))}
-#fireBtn.on{transform:scale(.93)}
-#fireBtn.on .fill{fill-opacity:.55}
+/* 左下摇杆 / 右下开火（外圈 = 过热） */
+#stick{position:absolute;left:calc(40px + env(safe-area-inset-left));bottom:30px;width:150px;height:150px;border-radius:50%;
+  background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.45);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+#knob{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;background:rgba(255,255,255,.88);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+#fireBtn{position:absolute;right:calc(44px + env(safe-area-inset-right));bottom:40px;width:124px;height:124px;border-radius:50%;
+  background:radial-gradient(circle at 50% 35%,#ff9a52,#ff6a1f 70%);box-shadow:0 8px 22px rgba(255,100,30,.4);transition:transform .08s}
+#fireBtn svg.ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+#fireBtn .ic{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;display:flex;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+#fireBtn.on{transform:scale(.93);filter:brightness(1.12)}
+#fireBtn.hot{background:radial-gradient(circle at 50% 35%,#ff6a4a,#c8281a 70%)}
 
-/* 覆盖层：像素面板 + 立体按钮 */
-.ov{position:fixed;inset:0;z-index:5;display:none;align-items:center;justify-content:center;background:rgba(10,8,6,.55);backdrop-filter:blur(3px)}
+/* 覆盖层：深色圆角面板 + 胶囊按钮 */
+.ov{position:fixed;inset:0;z-index:5;display:none;align-items:center;justify-content:center;background:rgba(8,10,16,.5);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 .ov.show{display:flex}
-.panel{background-color:#2b2119;
-  background-image:linear-gradient(45deg,rgba(255,255,255,.028) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.028) 75%),linear-gradient(45deg,rgba(255,255,255,.028) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.028) 75%);
-  background-size:16px 16px;background-position:0 0,8px 8px;
-  box-shadow:inset 4px 4px 0 #4f3f2e,inset -4px -4px 0 #170f0a,0 -4px 0 0 #000,0 4px 0 0 #000,-4px 0 0 0 #000,4px 0 0 0 #000,0 12px 0 0 rgba(0,0,0,.35);
-  padding:22px 28px;max-width:min(92vw,560px);max-height:90vh;overflow:auto;text-align:center}
-.logo .l1{display:block;font-size:clamp(38px,8vw,66px);font-weight:900;letter-spacing:6px;color:#ffb23a;
-  text-shadow:2px 2px 0 #d8640c,4px 4px 0 #a8420a,6px 6px 0 #6a2208,8px 8px 0 #000}
-.logo .l2{display:flex;justify-content:center;margin-top:12px}
-.tag{margin:12px 0 16px;color:#e8dcc8;font-size:14px;line-height:1.6}
-.btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-.btn{font-family:inherit;font-weight:900;font-size:17px;padding:11px 26px;border:0;margin:3px;background:#4a3d30;color:#fff;cursor:pointer;letter-spacing:2px;
-  text-shadow:2px 2px 0 rgba(0,0,0,.55);touch-action:manipulation;
-  box-shadow:inset 3px 3px 0 #6e5c47,inset -3px -4px 0 #241b13,0 -3px 0 0 #000,0 3px 0 0 #000,-3px 0 0 0 #000,3px 0 0 0 #000,0 7px 0 0 rgba(0,0,0,.4)}
-.btn:hover{background:#5a4a3a}
-.btn:active{transform:translateY(4px);box-shadow:inset 3px 4px 0 #241b13,inset -3px -3px 0 #6e5c47,0 -3px 0 0 #000,0 3px 0 0 #000,-3px 0 0 0 #000,3px 0 0 0 #000}
-.btn.primary{background:#e0701c;box-shadow:inset 3px 3px 0 #ffb060,inset -3px -4px 0 #9a420a,0 -3px 0 0 #000,0 3px 0 0 #000,-3px 0 0 0 #000,3px 0 0 0 #000,0 7px 0 0 rgba(0,0,0,.4)}
-.btn.primary:hover{background:#f07e26}
-.btn.primary:active{box-shadow:inset 3px 4px 0 #9a420a,inset -3px -3px 0 #ffb060,0 -3px 0 0 #000,0 3px 0 0 #000,-3px 0 0 0 #000,3px 0 0 0 #000}
-.ctrl{margin-top:16px;font-size:13px;color:#cdbfa6;line-height:1.8;text-align:left;display:inline-block}
-.ctrl b{color:#ffd28a}
-.best{margin-top:12px;font-size:13px;font-weight:800;color:#ffd25a;display:flex;align-items:center;justify-content:center;gap:8px}
-h2{font-size:24px;letter-spacing:4px;margin-bottom:12px;color:#ffb23a;text-shadow:3px 3px 0 #000}
-.row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:12px 0;font-size:15px;font-weight:700;text-align:left}
-.row output{width:34px;text-align:right;color:#ffd28a;font-weight:900}
+.panel{background:var(--card2);border:1px solid rgba(255,255,255,.08);border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,.5);
+  padding:24px 30px;max-width:min(92vw,560px);max-height:90vh;overflow:auto;text-align:center}
+.logo .l1{display:block;font-size:clamp(38px,8vw,64px);font-weight:900;letter-spacing:5px;
+  background:linear-gradient(180deg,#ffd08a,#ff6a1f);-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo .l2{display:block;font-size:12px;font-weight:800;letter-spacing:9px;color:rgba(255,255,255,.5);margin-top:4px}
+.tag{margin:12px 0 18px;color:rgba(255,255,255,.78);font-size:14px;line-height:1.6}
+.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{font-family:inherit;font-weight:800;font-size:16px;padding:12px 30px;border:0;border-radius:999px;background:rgba(255,255,255,.12);color:#fff;cursor:pointer;
+  letter-spacing:1px;touch-action:manipulation;transition:transform .1s,background .15s}
+.btn:hover{background:rgba(255,255,255,.2)}
+.btn:active{transform:scale(.95)}
+.btn.primary{background:linear-gradient(180deg,#ff9a4a,#ff6a1f);box-shadow:0 6px 18px rgba(255,110,40,.35)}
+.btn.primary:hover{background:linear-gradient(180deg,#ffa75c,#ff772e)}
+.ctrl{margin-top:18px;font-size:13px;color:rgba(255,255,255,.65);line-height:1.8;text-align:left;display:inline-block}
+.ctrl b{color:#ffb06a}
+.best{margin-top:12px;font-size:13px;font-weight:700;color:rgba(255,255,255,.6)}
+.best b{color:var(--yl);font-size:15px}
+h2{font-size:22px;font-weight:800;letter-spacing:2px;margin-bottom:14px;color:#fff}
+.row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:12px 0;font-size:15px;font-weight:600;text-align:left;color:rgba(255,255,255,.88)}
+.row output{width:34px;text-align:right;color:#ffb06a;font-weight:800}
 .row input[type=range]{-webkit-appearance:none;appearance:none;width:180px;margin-left:auto;height:24px;background:transparent;--p:50%;cursor:pointer}
-.row input[type=range]::-webkit-slider-runnable-track{height:10px;background:linear-gradient(90deg,var(--or) var(--p),#120c08 var(--p));box-shadow:0 0 0 3px #000,inset 0 3px 0 rgba(0,0,0,.3)}
-.row input[type=range]::-moz-range-track{height:10px;background:linear-gradient(90deg,var(--or) var(--p),#120c08 var(--p));box-shadow:0 0 0 3px #000}
-.row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:24px;margin-top:-7px;border:0;border-radius:0;background:#f4ede0;box-shadow:inset -3px -3px 0 #9a8a78,0 0 0 3px #000}
-.row input[type=range]::-moz-range-thumb{width:16px;height:24px;border:0;border-radius:0;background:#f4ede0;box-shadow:inset -3px -3px 0 #9a8a78,0 0 0 3px #000}
-.row input[type=checkbox]{-webkit-appearance:none;appearance:none;width:46px;height:24px;background:#120c08;position:relative;cursor:pointer;flex:none;box-shadow:0 0 0 3px #000}
-.row input[type=checkbox]::after{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;background:#7a6a58;box-shadow:inset 3px 3px 0 #9a8a78,inset -3px -3px 0 #4a3a2a}
-.row input[type=checkbox]:checked{background:#2e6a18}
-.row input[type=checkbox]:checked::after{left:25px;background:var(--gn);box-shadow:inset 3px 3px 0 #a8ff98,inset -3px -3px 0 #2a8a2a}
-.cards{display:flex;gap:16px;justify-content:center;margin:16px 0 8px;flex-wrap:wrap}
-.card{width:min(28vw,170px);min-height:180px;background:#3a2e22;padding:14px 10px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;margin:3px;touch-action:manipulation;
-  box-shadow:inset 3px 3px 0 #5e4c38,inset -3px -3px 0 #1e160f,0 -3px 0 0 #000,0 3px 0 0 #000,-3px 0 0 0 #000,3px 0 0 0 #000,0 9px 0 0 rgba(0,0,0,.4);
-  animation:cardIn .36s steps(4) backwards}
-@keyframes cardIn{0%{transform:translateY(60px);opacity:0}}
-.card:hover,.card:active{transform:translateY(-6px);background:#45372a;
-  box-shadow:inset 3px 3px 0 #6e5a42,inset -3px -3px 0 #1e160f,0 -3px 0 0 var(--or),0 3px 0 0 var(--or),-3px 0 0 0 var(--or),3px 0 0 0 var(--or),0 14px 0 0 rgba(0,0,0,.35)}
-.card .ic{height:46px;display:flex;align-items:center;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.5))}
-.card .nm{font-weight:900;font-size:16px;color:#ffd28a;text-shadow:2px 2px 0 #000}
-.card .ds{font-size:13px;color:#d8cbb4;line-height:1.45}
-.card .lv{font-size:11px;color:#9a8a70;margin-top:auto}
-.card .k{font-size:11px;color:#9a8a70}
-.pips{display:flex;gap:3px;margin-top:auto}
-.pips i{width:10px;height:10px;background:#1a130d;box-shadow:inset 0 0 0 2px #5a4734}
-.pips i.on{background:var(--yl);box-shadow:inset -2px -2px 0 #b88a10}
-.pips i.new{background:var(--gn);box-shadow:inset -2px -2px 0 #2a8a2a;animation:blink .5s steps(1) infinite}
-@keyframes blink{50%{opacity:.25}}
-.stats{display:grid;grid-template-columns:auto auto;gap:12px 30px;align-items:center;margin:12px auto 18px;font-size:16px;font-weight:800;text-align:left;width:max-content}
-.stats b{justify-self:end}
-#newBest{display:none;margin:0 auto 6px;width:max-content;padding:6px 10px;background:#c8401a;animation:blink .6s steps(1) infinite;
-  box-shadow:inset 3px 3px 0 #ff8a4a,inset -3px -3px 0 #7a1a08,0 -3px 0 0 #000,0 3px 0 0 #000,-3px 0 0 0 #000,3px 0 0 0 #000}
+.row input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--or) var(--p),rgba(255,255,255,.16) var(--p))}
+.row input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--or) var(--p),rgba(255,255,255,.16) var(--p))}
+.row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border:0;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.row input[type=range]::-moz-range-thumb{width:22px;height:22px;border:0;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.row input[type=checkbox]{-webkit-appearance:none;appearance:none;width:46px;height:28px;border-radius:14px;background:rgba(255,255,255,.18);position:relative;cursor:pointer;flex:none;transition:background .2s}
+.row input[type=checkbox]::after{content:'';position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.3);transition:left .2s}
+.row input[type=checkbox]:checked{background:var(--gn)}
+.row input[type=checkbox]:checked::after{left:21px}
+.cards{display:flex;gap:14px;justify-content:center;margin:16px 0 6px;flex-wrap:wrap}
+.card{width:min(28vw,170px);min-height:180px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:18px;padding:16px 10px 12px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:8px;touch-action:manipulation;transition:transform .15s,border-color .15s,background .15s;animation:cardIn .4s cubic-bezier(.2,1.3,.4,1) backwards}
+@keyframes cardIn{0%{transform:translateY(40px) scale(.9);opacity:0}}
+.card:hover,.card:active{transform:translateY(-5px);border-color:var(--or);background:rgba(255,122,47,.12)}
+.card .ic{width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--ic,#555);box-shadow:0 6px 14px rgba(0,0,0,.3)}
+.card .nm{font-weight:800;font-size:16px;color:#fff}
+.card .ds{font-size:13px;color:rgba(255,255,255,.7);line-height:1.45}
+.card .lv{font-size:11px;color:rgba(255,255,255,.45);margin-top:auto}
+.card .k{font-size:11px;color:rgba(255,255,255,.4)}
+.pips{display:flex;gap:4px;margin-top:auto}
+.pips i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.18)}
+.pips i.on{background:var(--yl)}
+.pips i.new{background:var(--gn);animation:blink .8s infinite}
+@keyframes blink{50%{opacity:.3}}
+.stats{display:grid;grid-template-columns:auto auto;gap:10px 34px;align-items:center;margin:12px auto 20px;font-size:15px;font-weight:600;text-align:left;width:max-content;color:rgba(255,255,255,.72)}
+.stats b{justify-self:end;font-size:22px;color:#fff}
+.stats b.hl{color:var(--yl)}
+#newBest{display:none;margin:-4px auto 8px;width:max-content;padding:5px 14px;border-radius:999px;font-size:13px;font-weight:800;color:#3a2400;background:var(--yl);animation:blink 1s infinite}
 @media (max-height:430px){
-  .panel{padding:12px 20px}
+  .panel{padding:14px 22px}
   .logo .l1{font-size:40px}
   .tag{margin:6px 0 10px}
   .ctrl{margin-top:8px;line-height:1.6}
-  h2{margin-bottom:6px;font-size:20px}
+  h2{margin-bottom:6px;font-size:19px}
   .row{margin:6px 0}
   .cards{margin:10px 0 4px}
-  .card{min-height:146px;padding:10px 8px}
-  #stick{width:130px;height:130px;bottom:22px}
-  #fireBtn{width:112px;height:112px;bottom:28px}
-  #radar{width:92px;height:92px}
-  #pauseBtn,#calBtn{right:calc(122px + env(safe-area-inset-right))!important}
-  #calBtn{top:66px}
-  #bossBox{top:80px}
-  #hpSegs{height:18px}
+  .card{min-height:150px;padding:10px 8px}
+  .card .ic{width:44px;height:44px}
+  #stick{width:130px;height:130px;bottom:20px}
+  #fireBtn{width:108px;height:108px;bottom:26px}
+  #radar{width:88px;height:88px}
+  #pauseBtn,#calBtn{right:calc(114px + env(safe-area-inset-right))!important}
+  #calBtn{top:62px}
+  #bossBox{top:88px}
 }
 #rotate{position:fixed;inset:0;z-index:9;background:#14110f;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-size:18px;text-align:center}
 @media (orientation:portrait){ body.touch #rotate{display:flex} }
@@ -205,19 +197,15 @@ h2{font-size:24px;letter-spacing:4px;margin-bottom:12px;color:#ffb23a;text-shado
 <div id="touch"></div>
 
 <div id="hud">
-  <div id="hpBox" class="sa-l"><span id="heart"></span><div id="hpSegs" class="segs pxb"></div><span id="hpTxt" class="pxt"></span></div>
-  <div id="waveBox">
-    <span id="waveTxt" class="pxt"></span>
-    <div id="remBar" class="segs pxb"></div>
-    <div id="subTxt" class="pxs"></div>
-  </div>
-  <div id="scoreRow" class="sa-l"><span id="scoreTxt" class="pxt"></span><span id="killTxt" class="pxs"></span></div>
-  <div id="bossBox"><div id="bossName" class="pxs"><span id="skull"></span>BOSS · 屠夫</div><div id="bossSegs" class="segs pxb"></div></div>
-  <canvas id="radar" class="sa-r pxb" width="56" height="56"></canvas>
-  <button id="pauseBtn" class="hbtn" style="right:calc(142px + env(safe-area-inset-right))" aria-label="暂停"></button>
-  <button id="calBtn" class="hbtn tOnly" style="right:calc(142px + env(safe-area-inset-right))" aria-label="校准"></button>
+  <div id="hpBox" class="sa-l card-ui"><span id="heart"></span><div id="hpBar" class="bar"><i id="hpGhost" class="gh"></i><i id="hpFill"></i></div><b id="hpTxt" class="num">100</b></div>
+  <div id="scoreRow" class="sa-l card-ui"><b id="scoreTxt" class="num">0</b><span id="killTxt"></span></div>
+  <div id="waveBox" class="card-ui"><div id="waveTxt">准备</div><div id="remBar" class="bar"><i></i></div><div id="subTxt"></div></div>
+  <div id="bossBox" class="card-ui"><div id="bossName"><span>BOSS · 屠夫</span><span id="bossPct" class="num"></span></div><div id="bossBar" class="bar"><i></i></div></div>
+  <canvas id="radar" class="sa-r" width="208" height="208"></canvas>
+  <button id="pauseBtn" class="hbtn" style="right:calc(132px + env(safe-area-inset-right))" aria-label="暂停"></button>
+  <button id="calBtn" class="hbtn tOnly" style="right:calc(132px + env(safe-area-inset-right))" aria-label="校准"></button>
   <div id="cross"><i class="br l"></i><i class="dot"></i><i class="br r"></i><div id="hitm"><i></i><i></i><i></i><i></i></div></div>
-  <div id="heatBox"><div id="heatSegs" class="segs pxb"></div><div id="heatTxt" class="pxs">过热</div></div>
+  <div id="heatBox"><div id="heatBar" class="bar"><i></i></div><div id="heatTxt">过热</div></div>
   <div id="pops"></div>
   <div id="dmgDirs"></div>
   <div id="vig"></div>
@@ -311,64 +299,28 @@ function rayAABB(o, d, x0,y0,z0, x1,y1,z1){
   return _rmin > 0 ? _rmin : 0;
 }
 
-/* ---- 像素风 UI 工具：字符画 → SVG、5×7 点阵字、像素圆环 ---- */
-const PAL = { k:'#140d08', w:'#ffffff', W:'#d8d0c4', o:'#ff9a1f', y:'#ffd23a', r:'#e8382c', d:'#8a1a14', g:'#5bd84a', G:'#2a8a2a',
-              b:'#5ac8ff', B:'#1f5fa8', s:'#c4c4cc', S:'#5a5a66', n:'#8a5a2a' };
-function pix(rows, sc=3, pal=PAL){
-  const h = rows.length, w = Math.max(...rows.map(r => r.length)), by = {};
-  rows.forEach((r, y) => { for(let x=0;x<r.length;x++){ const c = r[x]; if(c !== '.') (by[c] = by[c] || []).push(`M${x} ${y}h1v1h-1z`); } });
-  let s = `<svg class="px" width="${w*sc}" height="${h*sc}" viewBox="0 0 ${w} ${h}">`;
-  for(const c in by) s += `<path fill="${pal[c] || c}" d="${by[c].join('')}"/>`;
-  return s + '</svg>';
-}
-// 每个字 7 行，每行一个 32 进制字符（5 位，左边是高位）
-const FONT = {
-  '0':'ehjlphe','1':'4c4444e','2':'eh1248v','3':'v2421he','4':'26aiv22','5':'vgu11he','6':'68guhhe','7':'v124888','8':'ehhehhe','9':'ehhf12c',
-  A:'ehhvhhh',B:'uhhuhhu',C:'ehggghe',D:'sihhhis',E:'vgguggv',F:'vgguggg',G:'ehgnhhf',H:'hhhvhhh',I:'e44444e',K:'hikokih',L:'ggggggv',
-  M:'hrllhhh',N:'hhpljhh',O:'ehhhhhe',P:'uhhuggg',R:'uhhukih',S:'fgge11u',T:'v444444',U:'hhhhhhe',V:'hhhhha4',W:'hhhllla',X:'hha4ahh',
-  Y:'hha4444',Z:'v1248gv','+':'044v440','-':'000v000','/':'122488g',':':'0cc0cc0','.':'00000cc','!':'4444404',
-};
-function pxNum(str, sc=2, color='#fff'){
-  let x = 0, d = '';
-  for(const ch of String(str).toUpperCase()){
-    const g = FONT[ch]; if(!g){ x += 4; continue; }
-    for(let y=0;y<7;y++){ const v = parseInt(g[y], 32); for(let b=0;b<5;b++) if(v & (16 >> b)) d += `M${x + b} ${y}h1v1h-1z`; }
-    x += 6;
-  }
-  const w = Math.max(1, x - 1);
-  return `<svg class="px" width="${w*sc}" height="${7*sc}" viewBox="0 0 ${w} 7"><path fill="${color}" d="${d}"/></svg>`;
-}
-// n×n 网格里的像素圆环：返回 { ring:[{x,y,a}]（按顺时针角度排序）, disc:path }
-function pxRing(n, thick=2){
-  const c = (n - 1)/2, ro = n/2 - 0.3, ri = ro - thick, ring = []; let disc = '';
-  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
-    const d = Math.hypot(x - c, y - c);
-    if(d <= ro && d > ri) ring.push({ x, y, a:(Math.atan2(x - c, -(y - c)) + Math.PI*2) % (Math.PI*2) });
-    else if(d <= ri) disc += `M${x} ${y}h1v1h-1z`;
-  }
-  ring.sort((p, q) => p.a - q.a);
-  return { ring, disc };
-}
+/* ---- UI 图标：矢量 SVG（现代手游风），[内容, 是否填充, 卡片底色] ---- */
+const sp = d => `<path d="${d}"/>`;
 const ICON = {
-  heart:['.kkk.kkk.','krrrkrrrk','krwrrrrrk','krrrrrrrk','.krrrrrk.','..krrrk..','...krk...','....k....'],
-  skull:['..kkkkk..','.kwwwwwk.','kwwwwwwwk','kwkkwkkwk','kwkkwkkwk','kwwwkwwwk','.kwwwwwk.','..kwkwk..','..kkkkk..'],
-  star:['....y....','.y..o..y.','..yoooy..','..ooyoo..','yooywyooy','..ooyoo..','..yoooy..','.y..o..y.','....y....'],
-  pause:['ww.ww','ww.ww','ww.ww','ww.ww','ww.ww'],
-  cal:['..www..','.w...w.','w..w..w','w.www.w','w..w..w','.w...w.','..www..'],
-  arrow:['kk......kk','krk....krk','krrk..krrk','.krrkkrrk.','..krrrrk..','...krrk...','....kk....'],
-  dmg:['...kk...','..kwsk..','..kssk..','.kssSSk.','.kooook.','.kooook.','.kyyyyk.','.kooook.','.kooook.','.kkkkkk.'],
-  rate:['....kkkk.','...kyyyk.','..kyyyk..','.kyyykkkk','.kyyyyyyk','.kkkyyyk.','...kyyk..','..kyyk...','..kyk....','..kk.....'],
-  cool:['....b....','..b.b.b..','...bbb...','.b..b..b.','bbbbwbbbb','.b..b..b.','...bbb...','..b.b.b..','....b....'],
-  armor:['kkkkkkkkk','ksssssssk','ksBBBBBsk','ksBwBBBsk','ksBBBBBsk','.ksBBBsk.','.ksBBBsk.','..ksBsk..','...ksk...','....k....'],
-  repair:['...kkkk...','...kggk...','...kggk...','kkkkggkkkk','kggggggggk','kggwgggggk','kkkkggkkkk','...kggk...','...kggk...','...kkkk...'],
-  twin:['kkkkkkkk.y','kSsssssoyo','kkkkkkkk.y','..........','kkkkkkkk.y','kSsssssoyo','kkkkkkkk.y','.kSSSk....','.kSSSk....','.kkkkk....'],
-  pierce:['......k...','......kk..','kkkkkkkyk.','kyyyyyyyyk','kkkkkkkyk.','......kk..','......k...'],
-  ram:['kkkk......','kssskk....','ksssssskk.','kSSSSSSSsk','ksssssskk.','kssskk....','kkkk......'],
-  engine:['kk...kk...','kok..kok..','kook.kook.','.kook.kook','kook.kook.','kok..kok..','kk...kk...'],
-  boom:['......ky..','.....k.yo.','....kk..y.','..kkkkk...','.kSSSSSk..','kSwSSSSSk.','kSSSSSSSk.','kSSSSSSSk.','.kSSSSSk..','..kkkkk...'],
-  leech:['.kkk.kkk.','kgggkgggk','kgwgggggk','kgggggggk','.kgggggk.','..kgggk..','...kgk...','....k....'],
-  head:['...kkkk...','.kkrrrrkk.','.krwwwwrk.','krwrrrrwrk','krwrkkrwrk','krwrkkrwrk','krwrrrrwrk','.krwwwwrk.','.kkrrrrkk.','...kkkk...'],
+  heart:[sp('M12 20.5s-8-5-8-11a4.5 4.5 0 0 1 8-2.8 4.5 4.5 0 0 1 8 2.8c0 6-8 11-8 11z'), true],
+  pause:['<rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/>', true],
+  cal:['<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/>' + sp('M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4'), false],
+  arrow:[sp('M4 16l8-8 8 8'), false],
+  fire:[sp('M12 1.8l2.3 6.4 6.6-2.4-4 5.6 5.3 4.4-6.8-.4L12 22.2l-3.4-6.8-6.8.4 5.3-4.4-4-5.6 6.6 2.4z'), true],
+  dmg:[sp('M12 3c2.5 2.2 3.5 4.5 3.5 7.5V18h-7v-7.5C8.5 7.5 9.5 5.2 12 3zM8 21h8'), false, '#ff7a2f'],
+  rate:[sp('M13 2L4.5 13.5H11L10 22l8.5-11.5H12z'), true, '#f0a800'],
+  cool:[sp('M12 2v20M3.3 7l17.4 10M20.7 7L3.3 17M9 3.5l3 2.2 3-2.2M9 20.5l3-2.2 3 2.2'), false, '#2f9cf0'],
+  armor:[sp('M12 3l8 3v6c0 5-3.5 8.2-8 9-4.5-.8-8-4-8-9V6z'), false, '#5b6ef5'],
+  repair:[sp('M12 5v14M5 12h14'), false, '#25b865'],
+  twin:[sp('M3 7h13M3 12h13M3 17h13M19.5 7h1.5M19.5 12h1.5M19.5 17h1.5'), false, '#7a8496'],
+  pierce:[sp('M3 12h17M14 6l6 6-6 6M7.5 8v8'), false, '#f08a2a'],
+  ram:[sp('M3 6h8l10 6-10 6H3zM7 9.5v5'), false, '#9a7050'],
+  engine:[sp('M4 6l6 6-6 6M12 6l6 6-6 6'), false, '#14b4b4'],
+  boom:['<circle cx="10" cy="14" r="7"/>' + sp('M15 9l3-3M19.5 1.5v2M22.5 4.5h-2M21.5 2.5l-1.2 1.2'), false, '#e8404f'],
+  leech:[sp('M12 20.5s-8-5-8-11a4.5 4.5 0 0 1 8-2.8 4.5 4.5 0 0 1 8 2.8c0 6-8 11-8 11zM12 9.5v5.5M9.2 12.2h5.6'), false, '#25b865'],
+  head:['<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/>', false, '#e8404f'],
 };
+const ico = (k, size=24) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${ICON[k][1] ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICON[k][0]}</svg>`;
 
 const IS_TOUCH = /[?&]touch\b/.test(location.search) || (('ontouchstart' in window || navigator.maxTouchPoints > 0) && matchMedia('(pointer: coarse)').matches);
 const IS_APP = !!window.Capacitor;
@@ -1712,17 +1664,10 @@ const Waves = {
    14. HUD
    ===================================================================== */
 const HUD = {
-  annT:0, toastT:0, hitT:0, lastTxt:{}, lastPx:{}, segN:{}, segLit:{}, hpKey:'', lastScore:-1,
+  annT:0, toastT:0, hitT:0, lastTxt:{}, lastW:{}, lastScore:-1,
   set(id, v){ if(this.lastTxt[id] !== v){ this.lastTxt[id] = v; $(id).textContent = v; } },
-  // 点阵字（只在内容变化时重画）
-  setPx(id, str, sc, color){ const k = str + '|' + color; if(this.lastPx[id] !== k){ this.lastPx[id] = k; $(id).innerHTML = pxNum(str, sc, color); } },
-  // 分段条：n 格，亮 lit 格
-  segs(id, n, lit){
-    const el = $(id);
-    if(this.segN[id] !== n){ this.segN[id] = n; this.segLit[id] = -1; el.innerHTML = '<b><i></i></b>'.repeat(n); }
-    if(this.segLit[id] === lit) return; this.segLit[id] = lit;
-    const ch = el.children; for(let i=0;i<n;i++) ch[i].classList.toggle('off', i >= lit);
-  },
+  // 进度条宽度（只在变化时写 DOM）
+  bar(el, key, frac){ const w = Math.round(clamp(frac, 0, 1)*1000)/10; if(this.lastW[key] !== w){ this.lastW[key] = w; el.style.width = w + '%'; } },
   announce(t, s, color='#fff'){
     $('annT').textContent = t; $('annS').textContent = s || ''; $('annT').style.color = color; this.annT = 2.6;
     const a = $('ann'); a.classList.remove('drop'); void a.offsetWidth; a.classList.add('drop');
@@ -1731,7 +1676,7 @@ const HUD = {
   hitmark(head, kill){ const e = $('hitm'); e.className = kill ? 'kill' : head ? 'head' : ''; this.hitT = kill ? 0.3 : 0.12; },
   pop(txt, color){
     const box = $('pops'); if(box.children.length > 5) box.firstChild.remove();
-    const p = document.createElement('div'); p.className = 'pop pxt'; p.innerHTML = pxNum(txt, 2, color);
+    const p = document.createElement('div'); p.className = 'pop num'; p.textContent = txt; p.style.color = color;
     p.style.left = (22 + Math.random()*16) + 'px'; p.addEventListener('animationend', () => p.remove());
     box.appendChild(p);
   },
@@ -1742,41 +1687,34 @@ const HUD = {
     const d = document.createElement('div'); d.className = 'dd'; d.style.transform = `rotate(${a}rad)`; d.innerHTML = '<span>' + ICON_ARROW + '</span>'; d._t = 1;
     $('dmgDirs').appendChild(d);
   },
-  hpBar(){
-    const n = Math.max(1, Math.ceil(Car.maxHp/10)), hp = Math.max(0, Car.hp), key = Math.ceil(hp) + '|' + Math.ceil(Car.ghost) + '|' + n;
-    if(key === this.hpKey) return; this.hpKey = key;
-    const box = $('hpSegs');
-    if(box.children.length !== n) box.innerHTML = '<b><i></i></b>'.repeat(n);
-    const r = hp/Car.maxHp;
-    box.style.setProperty('--c', r > 0.5 ? 'var(--gn)' : r > 0.25 ? 'var(--yl)' : 'var(--rd)');
-    const ch = box.children;
-    for(let i=0;i<n;i++){ ch[i].firstChild.style.width = clamp((hp - i*10)/10, 0, 1)*100 + '%'; ch[i].classList.toggle('gh', Car.ghost > i*10 + 0.5); }
-    this.setPx('hpTxt', String(Math.ceil(hp)), 2, r > 0.25 ? '#fff' : '#ff6a5a');
-  },
   update(dt){
     const hp = Car.hp/Car.maxHp;
-    this.hpBar();
+    this.bar($('hpFill'), 'hp', hp); this.bar($('hpGhost'), 'gh', Car.ghost/Car.maxHp);
+    const hc = hp > 0.5 ? 'var(--gn)' : hp > 0.25 ? 'var(--yl)' : 'var(--rd)';
+    if(this.lastTxt.hc !== hc){ this.lastTxt.hc = hc; $('hpFill').style.background = hc; }
+    this.set('hpTxt', String(Math.max(0, Math.ceil(Car.hp))));
     $('heart').classList.toggle('low', hp < 0.3);
     // 波次 + 剩余僵尸条
+    const rb = $('remBar');
     if(Waves.phase === 'combat'){
       const rem = Waves.remaining();
-      this.setPx('waveTxt', 'WAVE ' + Waves.n, 3, Waves.n % 5 === 0 ? '#ff6a4a' : '#fff');
-      this.segs('remBar', 20, Math.ceil(rem/Math.max(1, Waves.total)*20 - 1e-6));
+      this.set('waveTxt', '第 ' + Waves.n + ' 波');
+      rb.style.display = ''; this.bar(rb.firstChild, 'rem', rem/Math.max(1, Waves.total));
       this.set('subTxt', '剩余 ' + rem + ' 只');
     } else {
-      this.setPx('waveTxt', Waves.n ? 'WAVE ' + (Waves.phase === 'wait' ? Waves.n + 1 : Waves.n) : 'READY', 3, '#ffd28a');
-      if(this.segN.remBar){ $('remBar').innerHTML = ''; this.segN.remBar = 0; }
+      this.set('waveTxt', Waves.n ? (Waves.phase === 'wait' ? '第 ' + (Waves.n + 1) + ' 波' : '第 ' + Waves.n + ' 波') : '准备');
+      rb.style.display = 'none';
       this.set('subTxt', Waves.phase === 'wait' ? Math.ceil(Waves.t) + ' 秒后开始' : '已清空');
     }
-    this.setPx('scoreTxt', String(Game.score), 2, '#ffd23a');
+    this.set('scoreTxt', String(Game.score));
     if(Game.score !== this.lastScore){ if(this.lastScore >= 0 && Game.score > this.lastScore){ const s = $('scoreTxt'); s.classList.remove('bump'); void s.offsetWidth; s.classList.add('bump'); } this.lastScore = Game.score; }
     this.set('killTxt', '击杀 ' + Game.kills);
     const b = Zombies.bossRef;
     $('bossBox').style.display = b ? 'block' : 'none';
-    if(b) this.segs('bossSegs', 20, Math.ceil(Math.max(0, b.hp/b.maxHp)*20 - 1e-6));
-    // 过热：准星下 10 格 + 开火键外圈
-    const hs = $('heatSegs'); this.segs('heatSegs', 10, Math.ceil(Gun.heat*10 - 0.02));
-    hs.classList.toggle('over', Gun.over); hs.classList.toggle('warm', !Gun.over && Gun.heat > 0.7);
+    if(b){ const f = Math.max(0, b.hp/b.maxHp); this.bar($('bossBar').firstChild, 'boss', f); this.set('bossPct', Math.ceil(f*100) + '%'); }
+    // 过热：准星下小条 + 开火键外圈
+    const hb = $('heatBar'); this.bar(hb.firstChild, 'heat', Gun.heat);
+    hb.classList.toggle('over', Gun.over); hb.classList.toggle('warm', !Gun.over && Gun.heat > 0.7);
     $('heatTxt').style.opacity = Gun.over ? (Math.sin(Game.t*14) > 0 ? 1 : 0.3) : 0;
     FireRing.set(Gun.heat, Gun.over);
     const cross = $('cross');
@@ -1787,61 +1725,58 @@ const HUD = {
     this.annT -= dt; $('ann').style.opacity = clamp(this.annT/0.5, 0, 1);
     this.toastT -= dt; if(this.toastT <= 0) $('toast').style.opacity = 0;
     $('vig').style.opacity = Math.max(Car.hurtT*0.8, hp < 0.3 ? 0.35 + Math.sin(Game.t*5)*0.15 : 0);
-    for(const d of [...$('dmgDirs').children]){ d._t -= dt; d.style.opacity = d._t > 0.5 ? 1 : d._t > 0.25 ? 0.6 : 0.3; if(d._t <= 0) d.remove(); }
+    for(const d of [...$('dmgDirs').children]){ d._t -= dt; d.style.opacity = Math.max(0, d._t); if(d._t <= 0) d.remove(); }
     $('clickHint').style.display = !IS_TOUCH && Game.state === 'play' && !Input.locked && !Car.dead ? 'block' : 'none';
     this.radar();
   },
-  // 方形像素雷达：56×56 画布，CSS 放大 2 倍（image-rendering:pixelated）
+  // 雷达：圆角方形半透明卡片，敌人是彩色圆点
   radar(){
-    const c = $('radar'), g = c.getContext('2d'), W = c.width, H = W/2, R = H - 3, RANGE = 55;
+    const c = $('radar'), g = c.getContext('2d'), W = c.width, H = W/2, R = H - 14, RANGE = 55;
     g.clearRect(0, 0, W, W);
-    g.fillStyle = 'rgba(14,20,10,.72)'; g.fillRect(0, 0, W, W);
-    g.fillStyle = 'rgba(140,255,140,.12)';
-    for(let i=7;i<W;i+=14){ g.fillRect(i, 0, 1, W); g.fillRect(0, i, W, 1); }
-    // 视野扇形（阶梯）
-    g.fillStyle = 'rgba(255,255,255,.1)';
-    for(let y=1;y<H;y++){ const w = Math.round((H - y)*0.93); g.fillRect(H - w, y, w*2, 1); }
+    g.fillStyle = 'rgba(14,18,28,.62)'; g.fillRect(0, 0, W, W);
+    g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 2;
+    for(const k of [0.5, 1]){ g.beginPath(); g.arc(H, H, R*k, 0, Math.PI*2); g.stroke(); }
+    // 视野扇形
+    const grd = g.createRadialGradient(H, H, 0, H, H, R);
+    grd.addColorStop(0, 'rgba(255,255,255,.22)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grd; g.beginPath(); g.moveTo(H, H); g.arc(H, H, R, -Math.PI/2 - 0.75, -Math.PI/2 + 0.75); g.closePath(); g.fill();
     const cy = Math.cos(Car.yaw), sy = Math.sin(Car.yaw);
     const proj = (x, z) => {
       const dx = x - Car.pos.x, dz = z - Car.pos.z, f = -dx*sy - dz*cy, r = dx*cy - dz*sy;
-      let px = r/RANGE*R, py = -f/RANGE*R; const m = Math.max(Math.abs(px), Math.abs(py));
-      if(m > R){ px *= R/m; py *= R/m; }
-      return [Math.round(H + px), Math.round(H + py), m > R];
+      let px = r/RANGE*R, py = -f/RANGE*R; const l = Math.hypot(px, py);
+      if(l > R){ px *= R/l; py *= R/l; }
+      return [H + px, H + py, l > R];
     };
-    for(const p of Pickups.list){ const [x, y] = proj(p.g.position.x, p.g.position.z); g.fillStyle = '#6aff6a'; g.fillRect(x - 2, y, 5, 1); g.fillRect(x, y - 2, 1, 5); }
-    const blink = Math.sin(Game.t*10) > 0;
+    for(const p of Pickups.list){ const [x, y] = proj(p.g.position.x, p.g.position.z); g.fillStyle = '#3ddc84'; g.fillRect(x - 7, y - 2.5, 14, 5); g.fillRect(x - 2.5, y - 7, 5, 14); }
     for(const z of Zombies.list){
       if(z.idle || z.dead) continue;
-      const [x, y, edge] = proj(z.pos.x, z.pos.z), s = z.type === 'boss' ? 4 : z.cfg.heavy ? 3 : 2;
-      if(z.type === 'boss' && !blink) continue;
-      g.globalAlpha = edge ? 0.55 : 1; g.fillStyle = z.cfg.map; g.fillRect(x - (s >> 1), y - (s >> 1), s, s);
+      const [x, y, edge] = proj(z.pos.x, z.pos.z), s = z.type === 'boss' ? 10 + Math.sin(Game.t*8)*2 : z.cfg.heavy ? 7 : 5;
+      g.globalAlpha = edge ? 0.5 : 1; g.fillStyle = z.cfg.map; g.beginPath(); g.arc(x, y, s, 0, Math.PI*2); g.fill();
     }
     g.globalAlpha = 1;
-    // 战车：白色方块 + 橙色车头（按车身方向取 8 个方位之一）
-    const da = wrapA(Car.body - Car.yaw), oct = Math.round(-da/(Math.PI/4));
-    g.fillStyle = '#fff'; g.fillRect(H - 2, H - 2, 4, 4);
-    g.fillStyle = '#ffb23a'; g.fillRect(H - 1 + Math.round(Math.sin(oct*Math.PI/4)*2), H - 1 - Math.round(Math.cos(oct*Math.PI/4)*2), 2, 2);
+    // 战车：白色箭头（车身方向）
+    g.save(); g.translate(H, H); g.rotate(-(Car.body - Car.yaw));
+    g.fillStyle = '#fff'; g.beginPath(); g.moveTo(0, -11); g.lineTo(8, 8); g.lineTo(0, 4); g.lineTo(-8, 8); g.closePath(); g.fill();
+    g.restore();
   },
 };
-const ICON_ARROW = pix([...ICON.arrow].reverse(), 4);   // 尖朝外，指向伤害来源
-// 开火键 / 摇杆：像素圆环 SVG；开火键外圈按顺时针随热度点亮
+const ICON_ARROW = ico('arrow', 44);
+// 开火键外圈：白色细环 + 随热度增长的弧线
 const FireRing = {
-  cells:[], lit:-1, over:null,
+  heat:null, lit:-1, over:null, C:2*Math.PI*58,
   build(){
-    const n = 26, { ring, disc } = pxRing(n, 2);
-    let s = `<svg class="px" viewBox="0 0 ${n} ${n}"><path class="fill" fill="#ff5a1e" fill-opacity=".22" d="${disc}"/>`;
-    ring.forEach(p => { s += `<rect x="${p.x}" y="${p.y}" width="1" height="1" fill="#fff"/>`; });
-    fireEl.innerHTML = s + '</svg><span class="ic">' + pix(ICON.star, 6) + '</span>';
-    this.cells = [...fireEl.querySelectorAll('rect')];
-    const st = pxRing(30, 2);
-    let s2 = `<svg class="px" viewBox="0 0 30 30"><path fill="#000" fill-opacity=".2" d="${st.disc}"/><path fill="#fff" fill-opacity=".85" d="${st.ring.map(p => `M${p.x} ${p.y}h1v1h-1z`).join('')}"/></svg>`;
-    stickEl.insertAdjacentHTML('afterbegin', s2);
+    fireEl.innerHTML = `<svg class="ring" viewBox="0 0 128 128"><circle cx="64" cy="64" r="58" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="5"/>` +
+      `<circle id="heatArc" cx="64" cy="64" r="58" fill="none" stroke="#ffc23a" stroke-width="7" stroke-linecap="round" stroke-dasharray="${this.C}" stroke-dashoffset="${this.C}"/></svg>` +
+      '<span class="ic">' + ico('fire', 46) + '</span>';
+    this.arc = fireEl.querySelector('#heatArc');
   },
   set(heat, over){
-    const lit = Math.round(heat*this.cells.length);
+    const lit = Math.round(heat*200);
     if(lit === this.lit && over === this.over) return; this.lit = lit; this.over = over;
-    const on = over ? '#ff3a1a' : heat > 0.7 ? '#ff8a1f' : '#ffd23a';
-    this.cells.forEach((c, i) => c.setAttribute('fill', i < lit ? on : '#fff'));
+    this.arc.setAttribute('stroke-dashoffset', this.C*(1 - heat));
+    this.arc.setAttribute('stroke', over ? '#ff3a2a' : heat > 0.7 ? '#ffe04a' : '#ffc23a');
+    this.arc.style.opacity = heat > 0.01 ? 1 : 0;
+    fireEl.classList.toggle('hot', over);
   },
 };
 
@@ -1905,7 +1840,7 @@ const Game = {
       let pips = '';
       if(u.max < 99){ for(let k=0;k<u.max;k++) pips += `<i class="${k < lv ? 'on' : k === lv ? 'new' : ''}"></i>`; pips = `<div class="pips">${pips}</div>`; }
       else pips = '<div class="lv">可重复选择</div>';
-      c.innerHTML = `<div class="ic">${ICON[u.id] ? pix(ICON[u.id], 4) : u.ic}</div><div class="nm">${u.nm}</div><div class="ds">${u.ds}</div>${pips}${IS_TOUCH ? '' : '<div class="k">按 ' + (i + 1) + '</div>'}`;
+      c.innerHTML = `<div class="ic" style="--ic:${ICON[u.id] ? ICON[u.id][2] : '#555'}">${ICON[u.id] ? ico(u.id, 30) : u.ic}</div><div class="nm">${u.nm}</div><div class="ds">${u.ds}</div>${pips}${IS_TOUCH ? '' : '<div class="k">按 ' + (i + 1) + '</div>'}`;
       c.onclick = () => { Sfx.click(); Up.lv[u.id] = lv + 1; u.f(); this.showOv(null); this.setState('play'); Waves.phase = 'wait'; Waves.t = 3; Gyro.reset(); if(!IS_TOUCH) lockPointer(); };
       box.appendChild(c);
     });
@@ -1915,9 +1850,8 @@ const Game = {
     this.setState('over'); Sfx.engine(0, false);
     this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock(); else this.unlockOk = false;
     const best = getBest(), nb = this.score > best; if(nb) setBest(this.score);
-    const P = (v, c='#fff') => `<b class="pxt">${pxNum(v, 3, c)}</b>`;
-    $('stats').innerHTML = `<span>坚持到波次</span>${P(Waves.n)}<span>击杀</span>${P(this.kills)}<span>得分</span>${P(this.score, '#ffd23a')}<span>最高分</span>${P(Math.max(best, this.score), '#ffd28a')}`;
-    $('newBest').innerHTML = pxNum('NEW BEST!', 2, '#fff'); $('newBest').style.display = nb && this.score > 0 ? 'block' : 'none';
+    $('stats').innerHTML = `<span>坚持到</span><b class="num">第 ${Waves.n} 波</b><span>击杀</span><b class="num">${this.kills}</b><span>得分</span><b class="num hl">${this.score}</b><span>最高分</span><b class="num">${Math.max(best, this.score)}</b>`;
+    $('newBest').textContent = '新纪录！'; $('newBest').style.display = nb && this.score > 0 ? 'block' : 'none';
     this.showOv('over');
   },
   step(dt){
@@ -1934,7 +1868,7 @@ function refreshMenu(){
   $('ctrlHint').innerHTML = IS_TOUCH
     ? '<b>滑动屏幕</b> 瞄准（带轻度瞄准辅助）<br><b>左下摇杆</b> 开车移动　<b>右下按钮</b> 按住开火<br>开车直接撞僵尸也能造成伤害；设置里可开陀螺仪'
     : '<b>鼠标</b> 瞄准　<b>WASD</b> 开车移动　<b>左键</b> 按住开火<br><b>Esc</b> 暂停　开车直接撞僵尸也能造成伤害';
-  const b = getBest(); $('bestTxt').innerHTML = b ? '最高分 <span class="pxt">' + pxNum(b, 2, '#ffd25a') + '</span>' : '';
+  const b = getBest(); $('bestTxt').innerHTML = b ? '最高分 <b class="num">' + b + '</b>' : '';
 }
 
 // 主循环
@@ -2020,9 +1954,9 @@ function openSettings(){
 function applyGyroUI(){ document.body.classList.toggle('gyro-on', IS_TOUCH && !!S.gyro); }
 
 // 启动
-$('heart').innerHTML = pix(ICON.heart, 3); $('skull').innerHTML = pix(ICON.skull, 2);
-$('pauseBtn').innerHTML = pix(ICON.pause, 3); $('calBtn').innerHTML = pix(ICON.cal, 3);
-$('logoSub').innerHTML = '<span class="pxt">' + pxNum('FIREPOWER RIG', 3, '#d8c8a8') + '</span>';
+$('heart').innerHTML = ico('heart', 22);
+$('pauseBtn').innerHTML = ico('pause', 22); $('calBtn').innerHTML = ico('cal', 22);
+$('logoSub').textContent = 'FIREPOWER RIG';
 FireRing.build(); applyGyroUI();
 Car.reset(); Car.sync(); Game.menuScene(); refreshMenu(); applyQuality();
 $('loading').remove();
