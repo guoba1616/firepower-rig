@@ -13,9 +13,19 @@
 <meta name="theme-color" content="#14110f">
 <title>火力战车 · Firepower Rig</title>
 <style>
+/* ===== 界面风格：沿用《极速栈道 Plank Rush》——深蓝圆角面板、粗边框 + 实心投影、橙色胶囊按钮、粗斜体标题 ===== */
+:root{
+  --bg:#0f1422;--panel:#171e30fa;--text:#fff;--muted:#b3bdd0;--line:#36415c;
+  --accent:#ff7a00;--accent-hi:#ffa42e;--accent-lo:#c45400;--ink:#151009;--gold:#ffc93c;--bad:#ff4d45;
+  --or:#ff7a00;--gn:#3ddc84;--yl:#ffc93c;--rd:#ff4d45;
+  --num:'Bahnschrift','DIN Alternate','Roboto Condensed','sans-serif-condensed','Arial Narrow','Microsoft YaHei',sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);--pop:cubic-bezier(.34,1.56,.64,1);
+  --sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
-html,body{width:100%;height:100%;overflow:hidden;background:#14110f;color:#fff;touch-action:none;
-  font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC","Source Han Sans SC",system-ui,sans-serif}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);touch-action:none;
+  font:16px/1.4 "Microsoft YaHei","PingFang SC","Noto Sans SC","Source Han Sans SC",system-ui,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;transition:transform .12s var(--ease),color .15s}
 #c{position:fixed;inset:0;width:100%;height:100%;display:block}
 #touch{position:fixed;inset:0;z-index:1;touch-action:none;display:none}
 body.playing.touch #touch{display:block}
@@ -23,47 +33,145 @@ body.playing.touch #touch{display:block}
 body.playing #hud{display:block}
 body:not(.touch) .tOnly{display:none!important}
 body.touch .pOnly{display:none!important}
-.sa-l{left:calc(16px + env(safe-area-inset-left))}
-.sa-r{right:calc(16px + env(safe-area-inset-right))}
+.sa-l{left:calc(16px + var(--sl))}
+.sa-r{right:calc(16px + var(--sr))}
+.gi{display:inline-flex;align-items:center;justify-content:center}
+.num{font-family:var(--num);font-weight:900;font-variant-numeric:tabular-nums}
 
-/* ===== 现代手游风：圆角半透明深色卡片 + 亮色强调 ===== */
-:root{--card:rgba(14,18,28,.6);--card2:rgba(20,24,36,.95);--or:#ff7a2f;--gn:#3ddc84;--yl:#ffc23a;--rd:#ff4d5e}
-.card-ui{background:var(--card);border-radius:14px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.num{font-weight:800;font-variant-numeric:tabular-nums}
-.bar{position:relative;height:10px;border-radius:6px;background:rgba(255,255,255,.16);overflow:hidden}
-.bar>i{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:6px;transition:width .15s}
+/* ---------- 圆角底板：按钮 / 分段 / 图标按钮共用（实心投影，按下会沉下去） ---------- */
+.btn,.icon-button,.seg button{position:relative;isolation:isolate;border:0;background:none}
+.btn:before,.icon-button:before,.seg button:before{content:'';position:absolute;inset:0;z-index:-1;border-radius:999px;background:var(--bgc,#232c44);
+  border:2px solid var(--bdc,var(--line));box-shadow:0 4px 0 var(--shc,#080b14b3);transition:background .15s,border-color .15s,box-shadow .12s}
+.btn:active,.icon-button:active,.seg button:active{transform:translateY(3px)}
+.btn:active:before,.icon-button:active:before{box-shadow:0 1px 0 var(--shc,#080b14b3)}
+.btn{min-height:48px;padding:11px 24px;display:flex;align-items:center;justify-content:center;gap:12px;font-weight:900;letter-spacing:1px;font-size:16px}
+.btn:hover,.icon-button:hover{--bgc:#2e3956;--bdc:#fff}
+.btn.primary{--bgc:var(--accent);--bdc:#ffc27a;--shc:var(--accent-lo);color:var(--ink)}
+.btn.primary:before{background:linear-gradient(105deg,transparent 42%,#fff9 50%,transparent 58%) 160% 0/260% 100% no-repeat,linear-gradient(180deg,var(--accent-hi),var(--accent));animation:sheen 3.2s ease-in-out infinite}
+.btn.ghost{--bgc:transparent;--bdc:transparent;--shc:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--text);--bdc:var(--text)}
+.icon-button{display:inline-flex;justify-content:center;align-items:center;flex-shrink:0;width:46px;height:46px}
+
+/* ---------- 覆盖层 / 面板 ---------- */
+.ov{position:fixed;inset:0;z-index:5;display:none;align-items:center;justify-content:center;background:#080b148c;
+  padding:calc(14px + var(--st)) calc(22px + var(--sr)) calc(14px + var(--sb)) calc(22px + var(--sl));animation:fadeIn .18s linear}
+.ov.show{display:flex}
+.ov.dim{background:#080b14c4}
+.panel{position:relative;background:var(--panel);border:3px solid var(--line);border-radius:28px;box-shadow:0 8px 0 #080b1480;
+  padding:20px 26px 24px;max-height:100%;overflow:auto;scrollbar-width:thin;scrollbar-color:#66717b transparent;animation:panelIn .32s var(--pop)}
+h2{font-size:28px;line-height:1.15;font-weight:900;font-style:italic;letter-spacing:1px}
+.panel-header{display:flex;gap:14px;align-items:center;margin-bottom:16px}
+.panel-header h2{white-space:nowrap}
+.panel-header:after{content:'';flex:1;height:10px;margin-right:18px;background:radial-gradient(circle,var(--accent) 0 4px,transparent 4.5px) 0 50%/20px 10px repeat-x;opacity:.7;
+  -webkit-mask-image:linear-gradient(90deg,#000,transparent 70%);mask-image:linear-gradient(90deg,#000,transparent 70%)}
+.sub{color:var(--muted);font-size:14px;font-weight:700;margin:-8px 0 14px}
+
+/* ---------- 主菜单：左侧标题 + 按钮，右边露出游戏画面 ---------- */
+#menu{justify-content:flex-start;background:linear-gradient(100deg,#080b14f5 0%,#080b14d9 34%,#080b1459 62%,#080b141f);padding-left:calc(clamp(36px,8vw,120px) + var(--sl))}
+.menu-content{width:min(520px,60vw)}
+.title{margin-bottom:22px;animation:itemIn .45s var(--pop) both}
+.title h1{font-size:clamp(52px,8vw,104px);font-weight:900;font-style:italic;letter-spacing:-1px;line-height:1.1;white-space:nowrap;text-shadow:0 5px 0 var(--accent),0 12px 30px #000a}
+.title-en{display:inline-block;margin:12px 0 0 4px;padding:5px 18px 4px 22px;border-radius:999px;background:var(--accent);color:var(--ink);font:900 clamp(13px,1.8vw,19px)/1.2 var(--num);letter-spacing:5px}
+html[lang=en] .title-en{letter-spacing:3px}
+.tag{margin:0 0 18px 4px;color:var(--muted);font-size:14px;line-height:1.5;max-width:440px;animation:itemIn .45s .05s var(--pop) both}
+.menu-actions{display:grid;gap:14px;width:min(310px,100%);margin-left:4px}
+.menu-actions>*{animation:itemIn .4s var(--pop) both}
+.menu-actions>:nth-child(1){animation-delay:.1s}.menu-actions>:nth-child(2){animation-delay:.17s}
+.start-button{justify-content:space-between;min-height:62px;font-size:22px;padding:11px 28px}
+.start-button .gi{animation:nudge 1.2s ease-in-out infinite}
+.menu-actions>.secondary{justify-content:flex-start;--bgc:#171e30ee}
+.ctrl{margin:18px 0 0 6px;font-size:13px;color:var(--muted);line-height:1.75}
+.ctrl b{color:var(--accent-hi)}
+.best{display:inline-flex;align-items:center;gap:10px;margin:12px 0 0 4px;padding:3px 6px 3px 16px;border-radius:999px;background:#0f1422cc;border:2px solid #ffffff2e;font-size:13px;font-weight:800;color:var(--muted)}
+.best:empty{display:none}
+.best b{padding:1px 12px;border-radius:999px;background:#fff;color:var(--ink);font-size:17px;box-shadow:0 3px 0 var(--accent)}
+#bLang{position:absolute;top:calc(14px + var(--st));right:calc(18px + var(--sr));min-height:40px;padding:6px 18px;font-size:14px;--bgc:#171e30ee}
+
+/* ---------- 设置 ---------- */
+.set-panel{width:min(760px,100%)}
+.set-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 32px}
+.row{display:flex;align-items:center;gap:14px;min-height:50px;font-size:15px;font-weight:800;text-align:left}
+.row>span:first-child{flex:1;white-space:nowrap}
+.row output{min-width:38px;text-align:right;color:var(--accent-hi);font:900 19px/1 var(--num);font-variant-numeric:tabular-nums}
+.row input[type=range]{-webkit-appearance:none;appearance:none;width:36%;height:40px;background:transparent;--p:50%;cursor:pointer;touch-action:pan-x}
+.row input[type=range]::-webkit-slider-runnable-track{height:10px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--p),var(--line) var(--p))}
+.row input[type=range]::-moz-range-track{height:10px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--p),var(--line) var(--p))}
+.row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;margin-top:-9px;border-radius:50%;border:4px solid #fff;background:var(--accent);box-shadow:0 3px 0 #080b14b3}
+.row input[type=range]::-moz-range-thumb{width:22px;height:22px;border:4px solid #fff;border-radius:50%;background:var(--accent)}
+.row input[type=checkbox]{-webkit-appearance:none;appearance:none;width:54px;height:30px;border-radius:999px;border:2px solid #6b7892;background:#232c44;position:relative;cursor:pointer;flex:none;transition:background .15s,border-color .15s}
+.row input[type=checkbox]::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#c3ccdc;transition:transform .22s var(--pop),background .15s}
+.row input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+.row input[type=checkbox]:checked::after{transform:translateX(24px);background:#fff}
+.row.full{grid-column:1/-1}
+.seg{display:flex;gap:8px;padding-bottom:4px}
+.seg button{min-height:40px;padding:6px 20px;font-weight:800;font-size:14px}
+.seg button.on{color:var(--ink);--bgc:var(--accent);--bdc:#ffc27a;--shc:var(--accent-lo)}
+
+/* ---------- 暂停 ---------- */
+.pause-panel{width:350px;display:grid;gap:12px;padding:22px 32px 28px}
+.pause-panel h2{margin-bottom:6px;font-size:34px}
+.pause-panel .btn{animation:itemIn .3s var(--pop) both}
+.pause-panel .btn:nth-child(3){animation-delay:.03s}.pause-panel .btn:nth-child(4){animation-delay:.06s}.pause-panel .btn:nth-child(5){animation-delay:.09s}
+
+/* ---------- 强化三选一：卡片（选中/悬停变橙边，左上角白色号码牌） ---------- */
+.up-panel{width:min(700px,100%)}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding-bottom:5px}
+.card{position:relative;padding:3px;border-radius:22px;background:var(--line);box-shadow:0 5px 0 #080b14b3;cursor:pointer;touch-action:manipulation;
+  transition:background .15s,transform .2s var(--pop);animation:itemIn .36s var(--pop) both}
+.card-in{display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;padding:18px 12px 14px;border-radius:19px;background:#1c2438;text-align:center}
+.card:hover,.card:active{background:var(--accent);transform:translateY(-4px)}
+.plate{position:absolute;top:10px;left:10px;padding:0 11px;border-radius:999px;background:#fff;color:var(--ink);font:900 16px/1.45 var(--num);box-shadow:0 3px 0 var(--accent)}
+.card .ic{width:56px;height:56px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--ic,#555);box-shadow:0 4px 0 #080b14b3}
+.card .nm{font-weight:900;font-size:18px;font-style:italic}
+.card .ds{font-size:13px;color:var(--muted);line-height:1.45}
+.card .lv{font-size:12px;color:var(--muted);margin-top:auto}
+.pips{display:flex;gap:5px;margin-top:auto}
+.pips i{width:10px;height:10px;border-radius:50%;background:#3b4662}
+.pips i.on{background:var(--gold)}
+.pips i.new{background:var(--accent);box-shadow:0 0 0 2px #fff;animation:blink .8s infinite}
+
+/* ---------- 结算 ---------- */
+.result-panel{width:min(640px,100%);padding:22px 32px 28px}
+.result-status{display:inline-block;margin:0 0 10px;padding:2px 16px;border-radius:999px;background:var(--bad);color:#fff;font-weight:900;letter-spacing:2px}
+.result-panel h2{font-size:34px}
+.res{display:flex;gap:10px;margin:18px 0 20px}
+.stat{flex:1;min-width:0;padding:8px 16px 10px;border-radius:18px;background:#0d1220;border:2px solid var(--line);animation:itemIn .34s var(--pop) both}
+.stat:nth-child(2){animation-delay:.06s}.stat:nth-child(3){animation-delay:.12s}.stat:nth-child(4){animation-delay:.18s}
+.stat>span{display:block;color:var(--muted);font-size:14px;white-space:nowrap}
+.stat b{display:block;font:900 24px/1.2 var(--num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat.main{flex:1.5;border-color:var(--accent)}
+.stat.main b{font-size:38px;color:var(--accent-hi)}
+#newBest{display:none;margin-left:8px;padding:1px 10px;border-radius:999px;background:var(--gold);color:var(--ink);font:900 13px/1.5 "Microsoft YaHei",sans-serif;vertical-align:middle;animation:blink 1s infinite}
+.result-actions{display:flex;gap:14px}
+.result-actions .btn{flex:1;white-space:nowrap}
+
+/* ---------- 战斗 HUD：深色半透明卡片 + 白色细边 ---------- */
+.hud-surface{background:#0f1422e0;border:2px solid #ffffff2e;border-radius:18px}
+.bar{position:relative;height:12px;border-radius:999px;background:#0f1422d9;border:2px solid #ffffff4d;overflow:hidden}
+.bar>i{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:999px;transition:width .15s}
 .bar>i.gh{background:rgba(255,255,255,.75);transition:width .45s .2s}
-
-/* 左上：血量 + 分数 */
-#hpBox{position:absolute;top:12px;display:flex;align-items:center;gap:10px;padding:8px 14px 8px 11px}
+#hpBox{position:absolute;top:calc(12px + var(--st));display:flex;align-items:center;gap:10px;padding:7px 14px 7px 11px}
 #heart{color:var(--rd);display:flex}
 #heart.low{animation:beat .6s infinite}
-@keyframes beat{0%,100%{transform:scale(1)}40%{transform:scale(1.25)}}
-#hpBar{width:min(20vw,220px);height:12px}
+#hpBar{width:min(20vw,220px);height:14px}
 #hpFill{background:var(--gn)}
-#hpTxt{font-size:16px;min-width:30px}
-#scoreRow{position:absolute;top:60px;display:flex;align-items:center;gap:10px;padding:5px 12px;font-size:12px;font-weight:700;color:rgba(255,255,255,.72)}
-#scoreTxt{font-size:15px;color:var(--yl);transform-origin:0 50%}
+#hpTxt{font-size:20px;min-width:34px;line-height:1}
+#scoreRow{position:absolute;top:calc(62px + var(--st));display:flex;align-items:center;gap:10px;padding:3px 14px 3px 5px;border-radius:999px;font-size:13px;font-weight:800;color:var(--muted)}
+#scoreTxt{padding:0 10px;border-radius:999px;background:#fff;color:var(--ink);font:900 16px/1.4 var(--num);box-shadow:0 2px 0 var(--accent);transform-origin:0 50%}
 #scoreTxt.bump{animation:bump .25s ease-out}
-@keyframes bump{0%{transform:scale(1.35)}}
-
-/* 顶部中间：波次 */
-#waveBox{position:absolute;left:50%;top:12px;transform:translateX(-50%);text-align:center;padding:6px 18px 7px;min-width:150px}
-#waveTxt{font-size:17px;font-weight:800;letter-spacing:1px}
-#remBar{height:6px;margin:5px 0 4px}
-#remBar>i{background:var(--rd)}
-#subTxt{font-size:12px;font-weight:700;color:var(--yl)}
-#bossBox{position:absolute;left:50%;top:98px;transform:translateX(-50%);width:min(44vw,400px);display:none;padding:7px 14px 10px}
-#bossName{display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:#ff8f8f;margin-bottom:6px;letter-spacing:1px}
-#bossBar>i{background:var(--rd)}
-
-/* 右上：雷达 + 按钮 */
-#radar{position:absolute;top:12px;width:104px;height:104px;border-radius:18px}
-.hbtn{position:absolute;pointer-events:auto;background:var(--card);border:0;border-radius:14px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;
-  touch-action:manipulation;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:transform .1s}
-.hbtn:active{transform:scale(.9);background:rgba(255,255,255,.25)}
-#pauseBtn{top:12px}
-#calBtn{top:64px}
+#waveBox{position:absolute;left:50%;top:calc(12px + var(--st));transform:translateX(-50%);text-align:center;padding:5px 18px 7px;min-width:170px}
+#waveTxt{font-size:19px;font-weight:900;font-style:italic;letter-spacing:1px}
+#remBar{height:10px;margin:4px 0 3px}
+#remBar>i{background:linear-gradient(90deg,var(--accent),var(--accent-hi))}
+#subTxt{font:900 13px/1.2 var(--num);color:var(--accent-hi);letter-spacing:.5px}
+#bossBox{position:absolute;left:50%;top:calc(98px + var(--st));transform:translateX(-50%);width:min(44vw,400px);display:none;padding:6px 14px 9px}
+#bossName{display:flex;justify-content:space-between;font-size:13px;font-weight:900;font-style:italic;color:#ffb2a6;margin-bottom:5px;letter-spacing:1px}
+#bossPct{font-style:normal}
+#bossBar>i{background:linear-gradient(90deg,#c8261f,var(--bad))}
+#radar{position:absolute;top:calc(12px + var(--st));width:104px;height:104px;border-radius:18px;border:2px solid #ffffff2e}
+.hbtn{position:absolute;pointer-events:auto;width:46px;height:46px;color:#fff;--bgc:#0f1422e0;--bdc:#ffffff66;--shc:transparent}
+#pauseBtn{top:calc(12px + var(--st))}
+#calBtn{top:calc(66px + var(--st))}
 body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
 
 /* 准星 [ · ]：有瞄准辅助目标时变红收紧 */
@@ -72,7 +180,7 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
 #cross .l{left:calc(-1*var(--g) - 8px);border-right:none;border-radius:3px 0 0 3px}
 #cross .r{left:var(--g);border-left:none;border-radius:0 3px 3px 0}
 #cross .dot{position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:#fff;filter:drop-shadow(0 0 2px rgba(0,0,0,.7))}
-#cross.hot .br{border-color:#ff8a3a}
+#cross.hot .br{border-color:var(--accent-hi)}
 #cross.lock .br{border-color:var(--rd)}
 #cross.lock .dot{background:var(--rd)}
 #hitm{position:absolute;left:0;top:0;opacity:0}
@@ -83,119 +191,90 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
 #hitm i:nth-child(4){transform:rotate(315deg) translateY(-16px)}
 #hitm.kill i{background:var(--rd);height:13px}
 #hitm.head i{background:var(--yl)}
-#heatBox{position:absolute;left:50%;top:calc(50% + 30px);transform:translateX(-50%);width:76px;text-align:center}
-#heatBar{height:5px;background:rgba(0,0,0,.35)}
+#heatBox{position:absolute;left:50%;top:calc(50% + 30px);transform:translateX(-50%);width:80px;text-align:center}
+#heatBar{height:9px;border-width:1.5px}
 #heatBar>i{background:var(--yl)}
-#heatBar.warm>i{background:var(--or)}
-#heatBar.over>i{background:#ff3a2a}
-#heatTxt{font-size:12px;font-weight:800;color:#ff5a3a;opacity:0;letter-spacing:2px;margin-top:4px;text-shadow:0 1px 3px #000}
+#heatBar.warm>i{background:var(--accent)}
+#heatBar.over>i{background:var(--bad)}
+#heatTxt{font-size:13px;font-weight:900;font-style:italic;color:#fff;opacity:0;letter-spacing:2px;margin-top:4px;text-shadow:0 2px 0 #c8261f,0 2px 6px #000}
 #pops{position:absolute;left:50%;top:50%;width:0;height:0}
-.pop{position:absolute;left:26px;top:-38px;font-size:16px;font-weight:800;white-space:nowrap;text-shadow:0 2px 5px rgba(0,0,0,.7);animation:pop .8s ease-out forwards}
-@keyframes pop{0%{transform:translateY(8px) scale(1.3);opacity:0}20%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-26px);opacity:0}}
-
+.pop{position:absolute;left:26px;top:-38px;font:900 18px/1 var(--num);white-space:nowrap;text-shadow:0 2px 0 #000a,0 2px 6px #000a;animation:pop .8s ease-out forwards}
 #dmgDirs{position:absolute;left:50%;top:50%;width:0;height:0}
 .dd{position:absolute;left:0;top:0;width:0;height:0}
 .dd span{position:absolute;left:-22px;top:-118px;color:var(--rd);filter:drop-shadow(0 0 5px rgba(255,40,40,.7))}
-#vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(200,0,0,.75) 100%);opacity:0}
-#ann{position:absolute;left:0;right:0;top:23%;text-align:center;opacity:0}
-#ann.drop{animation:drop .45s cubic-bezier(.2,1.4,.4,1)}
-@keyframes drop{0%{transform:translateY(-24px) scale(.92)}}
-#annT{font-size:clamp(28px,6vw,52px);font-weight:900;letter-spacing:3px;text-shadow:0 3px 12px rgba(0,0,0,.65)}
-#annS{font-size:clamp(13px,2.4vw,17px);margin-top:6px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.7)}
-#toast{position:absolute;left:50%;top:calc(50% + 72px);transform:translateX(-50%);background:var(--card2);border-radius:999px;
-  padding:9px 18px;font-size:14px;font-weight:700;max-width:80vw;opacity:0;transition:opacity .3s;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.35)}
-#clickHint{position:absolute;left:50%;top:62%;transform:translateX(-50%);background:var(--card2);padding:10px 20px;border-radius:999px;font-weight:800;display:none}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 45%,#a00b 100%);opacity:0}
+/* 大字公告：粗斜体 + 橙色实心投影 */
+#ann{position:absolute;left:16px;right:16px;top:24%;text-align:center;opacity:0}
+#ann.drop{animation:drop .32s var(--pop)}
+#annT{font-size:clamp(34px,6.4vw,66px);font-weight:900;font-style:italic;letter-spacing:1px;line-height:1.1;text-shadow:0 4px 0 var(--accent),0 6px 18px #000}
+#annS{font-size:16px;font-weight:800;margin-top:12px;color:#fff;text-shadow:0 2px 8px #000}
+#toast{position:absolute;left:50%;top:calc(50% + 72px);transform:translateX(-50%);background:#0f1422f0;border:2px solid #ffffff2e;border-radius:999px;
+  padding:8px 20px;font-size:15px;font-weight:800;max-width:80vw;opacity:0;transition:opacity .15s;white-space:nowrap}
+#clickHint{position:absolute;left:50%;top:62%;transform:translateX(-50%);background:#0f1422f0;border:2px solid var(--accent);padding:10px 22px;border-radius:999px;font-weight:900;display:none}
 
-/* 左下摇杆 / 右下开火（外圈 = 过热） */
-#stick{position:absolute;left:calc(40px + env(safe-area-inset-left));bottom:30px;width:150px;height:150px;border-radius:50%;
-  background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.45);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
-#knob{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;background:rgba(255,255,255,.88);box-shadow:0 4px 12px rgba(0,0,0,.3)}
-#fireBtn{position:absolute;right:calc(44px + env(safe-area-inset-right));bottom:40px;width:124px;height:124px;border-radius:50%;
-  background:radial-gradient(circle at 50% 35%,#ff9a52,#ff6a1f 70%);box-shadow:0 8px 22px rgba(255,100,30,.4);transition:transform .08s}
+/* 左下摇杆 / 右下开火（和《极速栈道》刹车键同款：深色圆 + 白色粗边；按下变橙） */
+#stick{position:absolute;left:calc(40px + var(--sl));bottom:calc(26px + var(--sb));width:150px;height:150px;border-radius:50%;
+  background:#0f142280;border:4px solid #ffffffb3;box-shadow:0 5px 0 #080b1466}
+#knob{position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;background:linear-gradient(180deg,var(--accent-hi),var(--accent));border:4px solid #fff;box-shadow:0 4px 0 var(--accent-lo)}
+#fireBtn{position:absolute;right:calc(40px + var(--sr));bottom:calc(32px + var(--sb));width:124px;height:124px;border-radius:50%;
+  background:#0f1422e6;border:4px solid #fff;box-shadow:0 5px 0 #080b1499;transition:transform .1s var(--ease),background .08s,box-shadow .1s}
 #fireBtn svg.ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
-#fireBtn .ic{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;display:flex;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
-#fireBtn.on{transform:scale(.93);filter:brightness(1.12)}
-#fireBtn.hot{background:radial-gradient(circle at 50% 35%,#ff6a4a,#c8281a 70%)}
+#fireBtn svg.ring circle:first-child{stroke:transparent}
+#fireBtn .ic{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:var(--accent-hi);display:flex}
+#fireBtn.on{background:var(--accent);border-color:#ffe0bd;transform:translateY(4px) scale(.96);box-shadow:0 1px 0 #080b1499}
+#fireBtn.on .ic{color:var(--ink)}
+#fireBtn.hot{background:#c8261f;border-color:#ffb2a6}
+#fireBtn.hot .ic{color:#fff}
 
-/* 覆盖层：深色圆角面板 + 胶囊按钮 */
-.ov{position:fixed;inset:0;z-index:5;display:none;align-items:center;justify-content:center;background:rgba(8,10,16,.5);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
-.ov.show{display:flex}
-.panel{background:var(--card2);border:1px solid rgba(255,255,255,.08);border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,.5);
-  padding:24px 30px;max-width:min(92vw,560px);max-height:90vh;overflow:auto;text-align:center}
-.logo .l1{display:block;font-size:clamp(38px,8vw,64px);font-weight:900;letter-spacing:5px;
-  background:linear-gradient(180deg,#ffd08a,#ff6a1f);-webkit-background-clip:text;background-clip:text;color:transparent}
-.logo .l2{display:block;font-size:12px;font-weight:800;letter-spacing:9px;color:rgba(255,255,255,.5);margin-top:4px}
-.tag{margin:12px 0 18px;color:rgba(255,255,255,.78);font-size:14px;line-height:1.6}
-.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.btn{font-family:inherit;font-weight:800;font-size:16px;padding:12px 30px;border:0;border-radius:999px;background:rgba(255,255,255,.12);color:#fff;cursor:pointer;
-  letter-spacing:1px;touch-action:manipulation;transition:transform .1s,background .15s}
-.btn:hover{background:rgba(255,255,255,.2)}
-.btn:active{transform:scale(.95)}
-.btn.primary{background:linear-gradient(180deg,#ff9a4a,#ff6a1f);box-shadow:0 6px 18px rgba(255,110,40,.35)}
-.btn.primary:hover{background:linear-gradient(180deg,#ffa75c,#ff772e)}
-.ctrl{margin-top:18px;font-size:13px;color:rgba(255,255,255,.65);line-height:1.8;text-align:left;display:inline-block}
-.ctrl b{color:#ffb06a}
-.best{margin-top:12px;font-size:13px;font-weight:700;color:rgba(255,255,255,.6)}
-.best b{color:var(--yl);font-size:15px}
-h2{font-size:22px;font-weight:800;letter-spacing:2px;margin-bottom:14px;color:#fff}
-.row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:12px 0;font-size:15px;font-weight:600;text-align:left;color:rgba(255,255,255,.88)}
-#menu .panel{position:relative}
-.langBtn{position:absolute;top:12px;right:14px;font:inherit;font-size:13px;font-weight:700;color:rgba(255,255,255,.75);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 14px;cursor:pointer}
-.seg{display:inline-flex;margin-left:auto;background:rgba(255,255,255,.1);border-radius:999px;padding:3px}
-.seg button{font:inherit;font-size:13px;font-weight:700;border:0;border-radius:999px;padding:5px 12px;background:none;color:rgba(255,255,255,.7);cursor:pointer}
-.seg button.on{background:var(--or);color:#fff}
-html[lang=en] .logo .l1{letter-spacing:2px}
-.row output{width:34px;text-align:right;color:#ffb06a;font-weight:800}
-.row input[type=range]{-webkit-appearance:none;appearance:none;width:180px;margin-left:auto;height:24px;background:transparent;--p:50%;cursor:pointer}
-.row input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--or) var(--p),rgba(255,255,255,.16) var(--p))}
-.row input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--or) var(--p),rgba(255,255,255,.16) var(--p))}
-.row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border:0;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
-.row input[type=range]::-moz-range-thumb{width:22px;height:22px;border:0;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
-.row input[type=checkbox]{-webkit-appearance:none;appearance:none;width:46px;height:28px;border-radius:14px;background:rgba(255,255,255,.18);position:relative;cursor:pointer;flex:none;transition:background .2s}
-.row input[type=checkbox]::after{content:'';position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.3);transition:left .2s}
-.row input[type=checkbox]:checked{background:var(--gn)}
-.row input[type=checkbox]:checked::after{left:21px}
-.cards{display:flex;gap:14px;justify-content:center;margin:16px 0 6px;flex-wrap:wrap}
-.card{width:min(28vw,170px);min-height:180px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:18px;padding:16px 10px 12px;cursor:pointer;
-  display:flex;flex-direction:column;align-items:center;gap:8px;touch-action:manipulation;transition:transform .15s,border-color .15s,background .15s;animation:cardIn .4s cubic-bezier(.2,1.3,.4,1) backwards}
-@keyframes cardIn{0%{transform:translateY(40px) scale(.9);opacity:0}}
-.card:hover,.card:active{transform:translateY(-5px);border-color:var(--or);background:rgba(255,122,47,.12)}
-.card .ic{width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--ic,#555);box-shadow:0 6px 14px rgba(0,0,0,.3)}
-.card .nm{font-weight:800;font-size:16px;color:#fff}
-.card .ds{font-size:13px;color:rgba(255,255,255,.7);line-height:1.45}
-.card .lv{font-size:11px;color:rgba(255,255,255,.45);margin-top:auto}
-.card .k{font-size:11px;color:rgba(255,255,255,.4)}
-.pips{display:flex;gap:4px;margin-top:auto}
-.pips i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.18)}
-.pips i.on{background:var(--yl)}
-.pips i.new{background:var(--gn);animation:blink .8s infinite}
-@keyframes blink{50%{opacity:.3}}
-.stats{display:grid;grid-template-columns:auto auto;gap:10px 34px;align-items:center;margin:12px auto 20px;font-size:15px;font-weight:600;text-align:left;width:max-content;color:rgba(255,255,255,.72)}
-.stats b{justify-self:end;font-size:22px;color:#fff}
-.stats b.hl{color:var(--yl)}
-#newBest{display:none;margin:-4px auto 8px;width:max-content;padding:5px 14px;border-radius:999px;font-size:13px;font-weight:800;color:#3a2400;background:var(--yl);animation:blink 1s infinite}
-@media (max-height:430px){
-  .panel{padding:14px 22px}
-  .logo .l1{font-size:40px}
-  .tag{margin:6px 0 10px}
-  .ctrl{margin-top:8px;line-height:1.6}
-  h2{margin-bottom:6px;font-size:19px}
-  .row{margin:6px 0}
-  .cards{margin:10px 0 4px}
-  .card{min-height:150px;padding:10px 8px}
-  .card .ic{width:44px;height:44px}
-  #stick{width:130px;height:130px;bottom:20px}
-  #fireBtn{width:108px;height:108px;bottom:26px}
-  #radar{width:88px;height:88px}
-  #pauseBtn,#calBtn{right:calc(114px + env(safe-area-inset-right))!important}
-  #calBtn{top:62px}
-  #bossBox{top:88px}
-}
-#rotate{position:fixed;inset:0;z-index:9;background:#14110f;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-size:18px;text-align:center}
+#rotate{position:fixed;inset:0;z-index:9;background:var(--bg);display:none;align-items:center;justify-content:center;flex-direction:column;gap:24px;font-size:22px;font-weight:900;font-style:italic;letter-spacing:2px;text-align:center}
 @media (orientation:portrait){ body.touch #rotate{display:flex} }
-#rotate .ph{width:60px;height:100px;border:4px solid #ffb23a;border-radius:10px;animation:rot 2s infinite}
+#rotate .ph{width:60px;height:100px;border:5px solid var(--accent);border-radius:12px;animation:rot 2s infinite}
+#loading{position:fixed;inset:0;z-index:10;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;font-style:italic;color:#fff;letter-spacing:4px}
+
+@keyframes fadeIn{from{opacity:0}}
+@keyframes panelIn{from{opacity:0;transform:translateY(20px) scale(.94)}}
+@keyframes itemIn{from{opacity:0;transform:translateY(14px) scale(.94)}}
+@keyframes sheen{0%,55%{background-position:160% 0,0 0}100%{background-position:-60% 0,0 0}}
+@keyframes nudge{50%{transform:translateX(6px)}}
+@keyframes blink{50%{opacity:.35}}
+@keyframes beat{0%,100%{transform:scale(1)}40%{transform:scale(1.25)}}
+@keyframes bump{0%{transform:scale(1.35)}}
+@keyframes pop{0%{transform:translateY(8px) scale(1.3);opacity:0}20%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-26px);opacity:0}}
+@keyframes drop{from{opacity:0;transform:scale(.8)}}
 @keyframes rot{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
-#loading{position:fixed;inset:0;z-index:10;background:#14110f;display:flex;align-items:center;justify-content:center;font-size:18px;color:#ffb23a;letter-spacing:4px}
+
+@media (max-height:480px){
+  .ov{padding:calc(10px + var(--st)) calc(18px + var(--sr)) calc(10px + var(--sb)) calc(18px + var(--sl))}
+  .panel{padding:12px 18px 14px;border-radius:24px}
+  .panel-header{margin-bottom:8px;gap:12px}
+  h2{font-size:24px}
+  .icon-button{width:42px;height:42px}
+  #menu{padding-left:calc(6vw + var(--sl))}
+  .title{margin-bottom:12px}.title h1{font-size:clamp(46px,8.4vw,72px)}.title-en{margin-top:8px}
+  .tag{display:none}
+  .start-button{min-height:52px;font-size:20px}.btn{min-height:44px;padding:8px 20px}
+  .menu-actions{gap:12px}
+  .ctrl{margin-top:10px;font-size:12px;line-height:1.6}
+  .best{margin-top:8px}
+  .row{min-height:42px;font-size:14px}
+  .seg button{min-height:36px;padding:4px 16px}
+  .pause-panel{gap:9px;padding:12px 28px 18px}.pause-panel h2{margin:0;font-size:26px}.pause-panel .btn{min-height:40px;padding:7px 16px}
+  .sub{margin:-4px 0 8px}
+  .cards{gap:10px}.card-in{padding:12px 8px 10px;gap:5px}.card .ic{width:44px;height:44px;border-radius:14px}.card .nm{font-size:16px}.card .ds{font-size:12px}
+  .result-panel{padding:12px 28px 18px}.result-panel h2{font-size:26px}.result-status{margin-bottom:4px}
+  .res{margin:10px 0 12px}.stat{padding:4px 12px 6px}.stat b{font-size:20px}.stat.main b{font-size:30px}
+  #stick{width:130px;height:130px;bottom:calc(18px + var(--sb))}
+  #fireBtn{width:108px;height:108px;bottom:calc(22px + var(--sb))}
+  #radar{width:88px;height:88px}
+  #pauseBtn,#calBtn{right:calc(114px + var(--sr))!important}
+  #calBtn{top:calc(62px + var(--st))}
+  #bossBox{top:calc(90px + var(--st))}
+  #annT{font-size:clamp(30px,6vw,52px)}
+}
+@media (max-width:560px){
+  .set-grid{grid-template-columns:1fr;gap:0}
+}
+@media (prefers-reduced-motion:reduce){ *,*:before,*:after{animation:none!important} }
 </style>
 </head>
 <body>
@@ -203,13 +282,13 @@ html[lang=en] .logo .l1{letter-spacing:2px}
 <div id="touch"></div>
 
 <div id="hud">
-  <div id="hpBox" class="sa-l card-ui"><span id="heart"></span><div id="hpBar" class="bar"><i id="hpGhost" class="gh"></i><i id="hpFill"></i></div><b id="hpTxt" class="num">100</b></div>
-  <div id="scoreRow" class="sa-l card-ui"><b id="scoreTxt" class="num">0</b><span id="killTxt"></span></div>
-  <div id="waveBox" class="card-ui"><div id="waveTxt"></div><div id="remBar" class="bar"><i></i></div><div id="subTxt"></div></div>
-  <div id="bossBox" class="card-ui"><div id="bossName"><span data-en="BOSS · Butcher">BOSS · 屠夫</span><span id="bossPct" class="num"></span></div><div id="bossBar" class="bar"><i></i></div></div>
+  <div id="hpBox" class="sa-l hud-surface"><span id="heart"></span><div id="hpBar" class="bar"><i id="hpGhost" class="gh"></i><i id="hpFill"></i></div><b id="hpTxt" class="num">100</b></div>
+  <div id="scoreRow" class="sa-l hud-surface"><b id="scoreTxt" class="num">0</b><span id="killTxt"></span></div>
+  <div id="waveBox" class="hud-surface"><div id="waveTxt"></div><div id="remBar" class="bar"><i></i></div><div id="subTxt"></div></div>
+  <div id="bossBox" class="hud-surface"><div id="bossName"><span data-en="BOSS · Butcher">BOSS · 屠夫</span><span id="bossPct" class="num"></span></div><div id="bossBar" class="bar"><i></i></div></div>
   <canvas id="radar" class="sa-r" width="208" height="208"></canvas>
-  <button id="pauseBtn" class="hbtn" style="right:calc(132px + env(safe-area-inset-right))" aria-label="暂停"></button>
-  <button id="calBtn" class="hbtn tOnly" style="right:calc(132px + env(safe-area-inset-right))" aria-label="校准"></button>
+  <button id="pauseBtn" class="hbtn icon-button" style="right:calc(132px + env(safe-area-inset-right))" aria-label="暂停"></button>
+  <button id="calBtn" class="hbtn icon-button tOnly" style="right:calc(132px + env(safe-area-inset-right))" aria-label="校准"></button>
   <div id="cross"><i class="br l"></i><i class="dot"></i><i class="br r"></i><div id="hitm"><i></i><i></i><i></i><i></i></div></div>
   <div id="heatBox"><div id="heatBar" class="bar"><i></i></div><div id="heatTxt" data-en="OVERHEAT">过热</div></div>
   <div id="pops"></div>
@@ -223,57 +302,59 @@ html[lang=en] .logo .l1{letter-spacing:2px}
 </div>
 
 <div id="menu" class="ov show">
-  <div class="panel">
-    <div class="logo"><span class="l1">火力战车</span><span class="l2" id="logoSub"></span></div>
+  <div class="menu-content">
+    <div class="title"><h1 id="logoMain">火力战车</h1><div class="title-en" id="logoSub"></div></div>
     <p class="tag" data-en="Drive a minigun rig through a ruined town and survive the blocky zombie waves.">驾驶转管机枪战车，在废墟小镇里撑过一波又一波方块僵尸。</p>
-    <div class="btns"><button id="bStart" class="btn primary" data-en="Play">开始游戏</button><button id="bSet" class="btn" data-en="Settings">设置</button></div>
-    <button id="bLang" class="langBtn"></button>
+    <div class="menu-actions">
+      <button id="bStart" class="btn primary start-button"><span data-en="Play">开始游戏</span><span class="gi" data-ic="next"></span></button>
+      <button id="bSet" class="btn secondary"><span class="gi" data-ic="gear"></span><span data-en="Settings">设置</span></button>
+    </div>
     <div class="ctrl" id="ctrlHint"></div>
     <div class="best" id="bestTxt"></div>
   </div>
+  <button id="bLang" class="btn"></button>
 </div>
 
 <div id="settings" class="ov">
-  <div class="panel" style="min-width:min(92vw,400px)">
-    <h2 data-en="Settings">设置</h2>
-    <label class="row tOnly"><span data-en="Swipe sensitivity">滑屏灵敏度</span><input type="range" id="sDragSens" min="0.3" max="3" step="0.1"><output></output></label>
-    <label class="row tOnly"><span data-en="Aim assist">瞄准辅助</span><input type="checkbox" id="sAssist"></label>
-    <label class="row tOnly"><span data-en="Gyro aiming (tilt phone)">陀螺仪瞄准（转动手机）</span><input type="checkbox" id="sGyro"></label>
-    <label class="row tOnly gyroOnly"><span data-en="Gyro sensitivity">陀螺仪灵敏度</span><input type="range" id="sGyroSens" min="0.5" max="3" step="0.1"><output></output></label>
-    <label class="row pOnly"><span data-en="Mouse sensitivity">鼠标灵敏度</span><input type="range" id="sMouseSens" min="0.2" max="3" step="0.1"><output></output></label>
-    <label class="row"><span data-en="Volume">音量</span><input type="range" id="sVol" min="0" max="1" step="0.05"><output></output></label>
-    <label class="row"><span data-en="High quality (shadows)">高画质（阴影）</span><input type="checkbox" id="sHq"></label>
-    <div class="row"><span>语言 · Language</span><span class="seg" id="sLang"><button data-l="zh">中文</button><button data-l="en">English</button></span></div>
-    <div class="btns" style="margin-top:14px"><button id="sBack" class="btn primary" data-en="Back">返回</button></div>
-  </div>
-</div>
-
-<div id="pause" class="ov">
-  <div class="panel">
-    <h2 data-en="Paused">暂停</h2>
-    <div class="btns" style="flex-direction:column;align-items:stretch">
-      <button id="pResume" class="btn primary" data-en="Resume">继续</button>
-      <button id="pSet" class="btn" data-en="Settings">设置</button>
-      <button id="pRestart" class="btn" data-en="Restart">重新开始</button>
-      <button id="pQuit" class="btn" data-en="Main menu">返回主菜单</button>
+  <div class="panel set-panel">
+    <header class="panel-header"><button id="sBack" class="icon-button" aria-label="返回"><span class="gi" data-ic="back"></span></button><h2 data-en="Settings">设置</h2></header>
+    <div class="set-grid">
+      <label class="row tOnly"><span data-en="Swipe sensitivity">滑屏灵敏度</span><input type="range" id="sDragSens" min="0.3" max="3" step="0.1"><output></output></label>
+      <label class="row tOnly"><span data-en="Aim assist">瞄准辅助</span><input type="checkbox" id="sAssist"></label>
+      <label class="row tOnly"><span data-en="Gyro aiming (tilt phone)">陀螺仪瞄准（转动手机）</span><input type="checkbox" id="sGyro"></label>
+      <label class="row tOnly gyroOnly"><span data-en="Gyro sensitivity">陀螺仪灵敏度</span><input type="range" id="sGyroSens" min="0.5" max="3" step="0.1"><output></output></label>
+      <label class="row pOnly"><span data-en="Mouse sensitivity">鼠标灵敏度</span><input type="range" id="sMouseSens" min="0.2" max="3" step="0.1"><output></output></label>
+      <label class="row"><span data-en="Volume">音量</span><input type="range" id="sVol" min="0" max="1" step="0.05"><output></output></label>
+      <label class="row"><span data-en="High quality (shadows)">高画质（阴影）</span><input type="checkbox" id="sHq"></label>
+      <div class="row"><span>语言 · Language</span><span class="seg" id="sLang"><button data-l="zh">中文</button><button data-l="en">English</button></span></div>
     </div>
   </div>
 </div>
 
-<div id="upgrade" class="ov">
-  <div class="panel" style="max-width:min(96vw,640px)">
-    <h2 id="upTitle">第 1 波完成</h2>
-    <div style="font-size:14px;color:#d8cbb4" data-en="Choose an upgrade for your rig">选择一项战车强化</div>
+<div id="pause" class="ov dim">
+  <div class="panel pause-panel">
+    <h2 data-en="Paused">暂停</h2>
+    <button id="pResume" class="btn primary"><span class="gi" data-ic="play"></span><span data-en="Resume">继续战斗</span></button>
+    <button id="pSet" class="btn secondary"><span data-en="Settings">设置</span></button>
+    <button id="pRestart" class="btn secondary"><span data-en="Restart">重新开始</span></button>
+    <button id="pQuit" class="btn ghost"><span data-en="Main menu">返回主菜单</span></button>
+  </div>
+</div>
+
+<div id="upgrade" class="ov dim">
+  <div class="panel up-panel">
+    <header class="panel-header"><h2 id="upTitle">第 1 波完成</h2></header>
+    <div class="sub" data-en="Choose an upgrade for your rig">选择一项战车强化</div>
     <div class="cards" id="cards"></div>
   </div>
 </div>
 
-<div id="over" class="ov">
-  <div class="panel">
-    <h2 style="color:#ff5a4a" data-en="Rig destroyed">战车被摧毁</h2>
-    <div id="newBest"></div>
-    <div class="stats" id="stats"></div>
-    <div class="btns"><button id="oAgain" class="btn primary" data-en="Play again">再来一局</button><button id="oMenu" class="btn" data-en="Main menu">主菜单</button></div>
+<div id="over" class="ov dim">
+  <div class="panel result-panel">
+    <div class="result-status" data-en="GAME OVER">战斗结束</div>
+    <h2 data-en="Rig destroyed">战车被摧毁</h2>
+    <div class="res" id="stats"></div>
+    <div class="result-actions"><button id="oAgain" class="btn primary"><span data-en="Play again">再来一局</span></button><button id="oMenu" class="btn secondary"><span data-en="Main menu">主菜单</span></button></div>
   </div>
 </div>
 
@@ -310,6 +391,10 @@ function rayAABB(o, d, x0,y0,z0, x1,y1,z1){
 /* ---- UI 图标：矢量 SVG（现代手游风），[内容, 是否填充, 卡片底色] ---- */
 const sp = d => `<path d="${d}"/>`;
 const ICON = {
+  back:[sp('M15 5l-7 7 7 7'), false],
+  next:[sp('M4.5 12h14M13 6l6 6-6 6'), false],
+  play:[sp('M7 4.5v15l12-7.5z'), true],
+  gear:['<circle cx="12" cy="12" r="3.3"/>' + sp('M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1'), false],
   heart:[sp('M12 20.5s-8-5-8-11a4.5 4.5 0 0 1 8-2.8 4.5 4.5 0 0 1 8 2.8c0 6-8 11-8 11z'), true],
   pause:['<rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/>', true],
   cal:['<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/>' + sp('M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4'), false],
@@ -1914,7 +1999,7 @@ const HUD = {
   radar(){
     const c = $('radar'), g = c.getContext('2d'), W = c.width, H = W/2, R = H - 14, RANGE = 55;
     g.clearRect(0, 0, W, W);
-    g.fillStyle = 'rgba(14,18,28,.62)'; g.fillRect(0, 0, W, W);
+    g.fillStyle = 'rgba(15,20,34,.88)'; g.fillRect(0, 0, W, W);
     g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 2;
     for(const k of [0.5, 1]){ g.beginPath(); g.arc(H, H, R*k, 0, Math.PI*2); g.stroke(); }
     // 视野扇形
@@ -2021,7 +2106,7 @@ const Game = {
       let pips = '';
       if(u.max < 99){ for(let k=0;k<u.max;k++) pips += `<i class="${k < lv ? 'on' : k === lv ? 'new' : ''}"></i>`; pips = `<div class="pips">${pips}</div>`; }
       else pips = '<div class="lv">' + T('可重复选择', 'Can pick again') + '</div>';
-      c.innerHTML = `<div class="ic" style="--ic:${ICON[u.id] ? ICON[u.id][2] : '#555'}">${ICON[u.id] ? ico(u.id, 30) : u.ic}</div><div class="nm">${T(u.nm, UP_EN[u.id][0])}</div><div class="ds">${T(u.ds, UP_EN[u.id][1])}</div>${pips}${IS_TOUCH ? '' : '<div class="k">' + T('按 ', 'Press ') + (i + 1) + '</div>'}`;
+      c.innerHTML = `<div class="card-in"><div class="ic" style="--ic:${ICON[u.id] ? ICON[u.id][2] : '#555'}">${ICON[u.id] ? ico(u.id, 30) : u.ic}</div><div class="nm">${T(u.nm, UP_EN[u.id][0])}</div><div class="ds">${T(u.ds, UP_EN[u.id][1])}</div>${pips}</div><b class="plate">${i + 1}</b>`;
       c.onclick = () => { Sfx.click(); Up.lv[u.id] = lv + 1; u.f(); this.showOv(null); this.setState('play'); Waves.phase = 'wait'; Waves.t = 3; Gyro.reset(); if(!IS_TOUCH) lockPointer(); };
       box.appendChild(c);
     });
@@ -2031,8 +2116,11 @@ const Game = {
     this.setState('over'); Sfx.engine(0, false);
     this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock(); else this.unlockOk = false;
     const best = getBest(), nb = this.score > best; if(nb) setBest(this.score);
-    $('stats').innerHTML = `<span>${T('坚持到', 'Reached')}</span><b class="num">${T('第 ' + Waves.n + ' 波', 'Wave ' + Waves.n)}</b><span>${T('击杀', 'Kills')}</span><b class="num">${this.kills}</b><span>${T('得分', 'Score')}</span><b class="num hl">${this.score}</b><span>${T('最高分', 'Best')}</span><b class="num">${Math.max(best, this.score)}</b>`;
-    $('newBest').textContent = T('新纪录！', 'NEW BEST!'); $('newBest').style.display = nb && this.score > 0 ? 'block' : 'none';
+    $('stats').innerHTML = `<div class="stat main"><span>${T('得分', 'Score')}<em id="newBest">${T('新纪录！', 'NEW BEST!')}</em></span><b>${this.score}</b></div>` +
+      `<div class="stat"><span>${T('坚持到', 'Reached')}</span><b>${T('第 ' + Waves.n + ' 波', 'Wave ' + Waves.n)}</b></div>` +
+      `<div class="stat"><span>${T('击杀', 'Kills')}</span><b>${this.kills}</b></div>` +
+      `<div class="stat"><span>${T('最高分', 'Best')}</span><b>${Math.max(best, this.score)}</b></div>`;
+    $('newBest').style.display = nb && this.score > 0 ? 'inline-block' : 'none';
     this.showOv('over');
   },
   step(dt){
@@ -2139,8 +2227,8 @@ function applyLang(){
   document.documentElement.lang = en ? 'en' : 'zh-CN';
   document.title = en ? 'Firepower Rig · 火力战车' : '火力战车 · Firepower Rig';
   for(const e of document.querySelectorAll('[data-en]')){ if(e.dataset.zh === undefined) e.dataset.zh = e.textContent; e.textContent = en ? e.dataset.en : e.dataset.zh; }
-  $('pauseBtn').setAttribute('aria-label', T('暂停', 'Pause')); $('calBtn').setAttribute('aria-label', T('校准', 'Recalibrate'));
-  document.querySelector('.logo .l1').textContent = T('火力战车', 'FIREPOWER RIG'); $('logoSub').textContent = T('FIREPOWER RIG', '火力战车');
+  $('pauseBtn').setAttribute('aria-label', T('暂停', 'Pause')); $('sBack').setAttribute('aria-label', T('返回', 'Back')); $('calBtn').setAttribute('aria-label', T('校准', 'Recalibrate'));
+  $('logoMain').textContent = T('火力战车', 'FIREPOWER RIG'); $('logoSub').textContent = T('FIREPOWER RIG', '火力战车');
   $('bLang').textContent = en ? '中文' : 'English';
   for(const b of $('sLang').children) b.classList.toggle('on', b.dataset.l === S.lang);
   HUD.lastTxt = {}; refreshMenu();
@@ -2152,6 +2240,7 @@ function applyGyroUI(){ document.body.classList.toggle('gyro-on', IS_TOUCH && !!
 
 // 启动
 $('heart').innerHTML = ico('heart', 22);
+for(const e of document.querySelectorAll('[data-ic]')) e.innerHTML = ico(e.dataset.ic, 22);
 $('pauseBtn').innerHTML = ico('pause', 22); $('calBtn').innerHTML = ico('cal', 22);
 FireRing.build(); applyGyroUI();
 Car.reset(); Car.sync(); Game.menuScene(); applyLang(); applyQuality();
