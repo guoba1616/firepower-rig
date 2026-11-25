@@ -421,11 +421,12 @@ if(IS_TOUCH) document.body.classList.add('touch');
 /* =====================================================================
    1. 设置（localStorage）
    ===================================================================== */
-const S = { v:3, gyro:false, gyroSens:1.5, dragSens:1.0, assist:true, mouseSens:1.0, vol:0.8, hq:!IS_TOUCH, vib:true, follow:true, lang:/^zh/i.test(navigator.language || '') ? 'zh' : 'en' };
+const S = { v:4, gyro:false, gyroSens:1.5, dragSens:1.0, assist:true, mouseSens:1.0, vol:0.8, hq:!IS_TOUCH, vib:true, follow:IS_TOUCH, lang:/^zh/i.test(navigator.language || '') ? 'zh' : 'en' };
 try {
   const old = JSON.parse(localStorage.getItem('fp_settings') || '{}');
   if(old.v !== 2 && old.v !== 3){ delete old.gyro; delete old.dragSens; old.v = 2; }   // v1 默认陀螺仪；v2 起默认滑屏
   if(old.v === 2){ delete old.follow; old.v = 3; }   // v3 起默认「枪跟着车转」
+  if(old.v === 3){ if(!IS_TOUCH) delete old.follow; old.v = 4; }   // v4：电脑版换回 FPS 操作（WASD 按视角方向走，鼠标瞄准）
   Object.assign(S, old);
 } catch(e){}
 const T = (zh, en) => S.lang === 'en' ? en : zh;   // 双语文本
