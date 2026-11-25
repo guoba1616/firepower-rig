@@ -107,6 +107,20 @@ html[lang=en] .title-en{letter-spacing:3px}
 .seg button{min-height:40px;padding:6px 20px;font-weight:800;font-size:14px}
 .seg button.on{color:var(--ink);--bgc:var(--accent);--bdc:#ffc27a;--shc:var(--accent-lo)}
 
+/* ---------- 选关卡（和《极速栈道》选图同款卡片） ---------- */
+.lv-panel{width:min(820px,100%)}
+.maps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding-bottom:5px}
+.map-card{position:relative;padding:3px;border-radius:22px;background:var(--line);min-width:0;box-shadow:0 5px 0 #080b14b3;cursor:pointer;touch-action:manipulation;
+  transition:background .15s,transform .2s var(--pop);animation:itemIn .36s var(--pop) both}
+.map-card:hover,.map-card:active{background:var(--accent);transform:translateY(-4px)}
+.map-in{display:block;overflow:hidden;border-radius:19px;background:#1c2438}
+.map-art{display:block;width:100%;aspect-ratio:16/10}
+.map-art svg{display:block;width:100%;height:100%}
+.map-info{padding:10px 14px 12px}
+.map-info h3{font-size:20px;font-weight:900;font-style:italic}
+.map-info span{display:block;color:var(--muted);font:800 13px/1.3 var(--num);white-space:nowrap}
+.map-info span.ok{color:var(--gn)}
+
 /* ---------- 暂停 ---------- */
 .pause-panel{width:350px;display:grid;gap:12px;padding:22px 32px 28px}
 .pause-panel h2{margin-bottom:6px;font-size:34px}
@@ -132,6 +146,7 @@ html[lang=en] .title-en{letter-spacing:3px}
 
 /* ---------- 结算 ---------- */
 .result-panel{width:min(640px,100%);padding:22px 32px 28px}
+.result-status.win{background:var(--gn);color:var(--ink)}
 .result-status{display:inline-block;margin:0 0 10px;padding:2px 16px;border-radius:999px;background:var(--bad);color:#fff;font-weight:900;letter-spacing:2px}
 .result-panel h2{font-size:34px}
 .res{display:flex;gap:10px;margin:18px 0 20px}
@@ -163,6 +178,7 @@ html[lang=en] .title-en{letter-spacing:3px}
 #waveTxt{font-size:19px;font-weight:900;font-style:italic;letter-spacing:1px}
 #remBar{height:10px;margin:4px 0 3px}
 #remBar>i{background:linear-gradient(90deg,var(--accent),var(--accent-hi))}
+#remBar.xp>i{background:linear-gradient(90deg,#2f9cf0,#7ae0ff)}
 #subTxt{font:900 13px/1.2 var(--num);color:var(--accent-hi);letter-spacing:.5px}
 #bossBox{position:absolute;left:50%;top:calc(98px + var(--st));transform:translateX(-50%);width:min(44vw,400px);display:none;padding:6px 14px 9px}
 #bossName{display:flex;justify-content:space-between;font-size:13px;font-weight:900;font-style:italic;color:#ffb2a6;margin-bottom:5px;letter-spacing:1px}
@@ -260,6 +276,7 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
   .seg button{min-height:36px;padding:4px 16px}
   .pause-panel{gap:9px;padding:12px 28px 18px}.pause-panel h2{margin:0;font-size:26px}.pause-panel .btn{min-height:40px;padding:7px 16px}
   .sub{margin:-4px 0 8px}
+  .map-art{aspect-ratio:16/8}.map-info{padding:6px 12px 8px}.map-info h3{font-size:17px}
   .cards{gap:10px}.card-in{padding:12px 8px 10px;gap:5px}.card .ic{width:44px;height:44px;border-radius:14px}.card .nm{font-size:16px}.card .ds{font-size:12px}
   .result-panel{padding:12px 28px 18px}.result-panel h2{font-size:26px}.result-status{margin-bottom:4px}
   .res{margin:10px 0 12px}.stat{padding:4px 12px 6px}.stat b{font-size:20px}.stat.main b{font-size:30px}
@@ -313,6 +330,13 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
   <button id="bLang" class="btn"></button>
 </div>
 
+<div id="levels" class="ov">
+  <div class="panel lv-panel">
+    <header class="panel-header"><button id="lBack" class="icon-button" aria-label="返回"><span class="gi" data-ic="back"></span></button><h2 data-en="Choose a level">选择关卡</h2></header>
+    <div class="maps" id="levelList"></div>
+  </div>
+</div>
+
 <div id="settings" class="ov">
   <div class="panel set-panel">
     <header class="panel-header"><button id="sBack" class="icon-button" aria-label="返回"><span class="gi" data-ic="back"></span></button><h2 data-en="Settings">设置</h2></header>
@@ -350,10 +374,10 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
 
 <div id="over" class="ov dim">
   <div class="panel result-panel">
-    <div class="result-status" data-en="GAME OVER">战斗结束</div>
-    <h2 data-en="Rig destroyed">战车被摧毁</h2>
+    <div class="result-status" id="resStatus">战斗结束</div>
+    <h2 id="resTitle">战车被摧毁</h2>
     <div class="res" id="stats"></div>
-    <div class="result-actions"><button id="oAgain" class="btn primary"><span data-en="Play again">再来一局</span></button><button id="oMenu" class="btn secondary"><span data-en="Main menu">主菜单</span></button></div>
+    <div class="result-actions"><button id="oNext" class="btn primary" style="display:none"><span data-en="Next level">下一关</span><span class="gi" data-ic="next"></span></button><button id="oAgain" class="btn primary"><span data-en="Play again">再来一局</span></button><button id="oMenu" class="btn secondary"><span data-en="Main menu">主菜单</span></button></div>
   </div>
 </div>
 
@@ -411,6 +435,7 @@ const ICON = {
   boom:['<circle cx="10" cy="14" r="7"/>' + sp('M15 9l3-3M19.5 1.5v2M22.5 4.5h-2M21.5 2.5l-1.2 1.2'), false, '#e8404f'],
   leech:[sp('M12 20.5s-8-5-8-11a4.5 4.5 0 0 1 8-2.8 4.5 4.5 0 0 1 8 2.8c0 6-8 11-8 11zM12 9.5v5.5M9.2 12.2h5.6'), false, '#25b865'],
   head:['<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/>', false, '#e8404f'],
+  magnet:[sp('M6 3v9a6 6 0 0 0 12 0V3M6 7h4M14 7h4M10 3v9a2 2 0 0 0 4 0V3'), false, '#e0457a'],
 };
 const ico = (k, size=24) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${ICON[k][1] ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICON[k][0]}</svg>`;
 
@@ -500,6 +525,7 @@ const Sfx = {
   pickup(){ [660, 880, 1320].forEach((f, i) => this.tone('triangle', f, f, 0.12, 0.16, 0, 0.005, i*0.07)); },
   overheat(){ this.noise(0.7, 0.2, 'highpass', 3200); this.tone('square', 900, 300, 0.25, 0.06); },
   click(){ this.tone('square', 880, 880, 0.03, 0.05); },
+  gem(){ this.tone('sine', 1300 + Math.random()*400, 2300, 0.06, 0.05); },
   horn(){ this.tone('sawtooth', 220, 210, 0.7, 0.1, 0, 0.05); this.tone('sawtooth', 277, 262, 0.7, 0.08, 0, 0.05); },
   spit(v, pan){ this.noise(0.3, 0.3*v, 'bandpass', 700, 3, pan); },
   splat(v, pan){ this.noise(0.3, 0.3*v, 'lowpass', 1300, 0, pan); },
@@ -621,8 +647,20 @@ const boomLight = new THREE.PointLight(0xff8a30, 0, 30, 2); scene.add(boomLight)
    4. 世界：地面、道路、废墟、树、箱子、残骸…（静态方块统一用一个 InstancedMesh）
    ===================================================================== */
 const ARENA = 78;
+const STREET_TEX = makeTex(32, 32, g => {
+  for(let y=0;y<32;y++) for(let x=0;x<32;x++){ const k = 1 - Math.random()*0.16; pset(g, x, y, 84*k, 83*k, 82*k); }
+  g.fillStyle = '#e8e4da'; g.fillRect(15, 4, 2, 14);
+  g.fillStyle = '#d8b64a'; g.fillRect(0, 0, 1, 32); g.fillRect(31, 0, 1, 32);
+});
+const WATER_TEX = makeTex(32, 32, g => {
+  for(let y=0;y<32;y++) for(let x=0;x<32;x++){ const k = 1 - Math.random()*0.12; pset(g, x, y, 52*k, 108*k, 138*k); }
+  g.fillStyle = 'rgba(200,230,255,.35)'; for(let i=0;i<10;i++) g.fillRect((Math.random()*28)|0, (Math.random()*32)|0, 3 + ((Math.random()*4)|0), 1);
+});
 const World = {
   boxes:[],   // 碰撞盒 {x0,z0,x1,z1,h,c}
+  id:null, g:new THREE.Group(),
+  // hx/hz：地图半宽/半长（僵尸活动范围）；lx/lz：战车能开到的范围；deck：射线打到地面的最大 |x|（桥外面是空的）
+  hx:ARENA, hz:ARENA, lx:ARENA - 2.6, lz:ARENA - 2.6, deck:Infinity, groundC:0x6a5a3a, start:{ x:0, z:8, yaw:0 },
   addBox(x0, z0, x1, z1, h, c){ this.boxes.push({ x0:Math.min(x0,x1), z0:Math.min(z0,z1), x1:Math.max(x0,x1), z1:Math.max(z0,z1), h, c }); },
   _n:{ x:0, z:0 },
   // 圆（半径 r）推出所有碰撞盒，返回合成法线或 null
@@ -652,146 +690,281 @@ const World = {
   // 射线 vs 地面 + 碰撞盒
   ray(o, d, maxT){
     let t = maxT, kind = null, c = 0x7a6a50;
-    if(d.y < -1e-5){ const tg = -o.y/d.y; if(tg > 0 && tg < t){ t = tg; kind = 'ground'; c = 0x6a5a3a; } }
+    if(d.y < -1e-5){ const tg = -o.y/d.y; if(tg > 0 && tg < t && Math.abs(o.x + d.x*tg) <= this.deck){ t = tg; kind = 'ground'; c = this.groundC; } }
     for(const b of this.boxes){
       const tb = rayAABB(o, d, b.x0, 0, b.z0, b.x1, b.h, b.z1);
       if(tb >= 0 && tb < t){ t = tb; kind = 'box'; c = b.c; }
     }
     return { t, kind, c, hit:kind !== null };
   },
+  set(o){ Object.assign(this, o); },
+  // 换地图：清掉旧的网格和碰撞盒，再搭新的
+  build(id){
+    if(this.id === id) return;
+    this.id = id; this.boxes = [];
+    for(const o of [...this.g.children]){
+      this.g.remove(o);
+      if(o.geometry) o.geometry.dispose();
+      if(o.material){ if(o.material.map && o.material.map._own) o.material.map.dispose(); o.material.dispose(); }
+    }
+    MAPS[id]();
+  },
 };
-{
-  const rng = seeded(20261124), R = () => rng();
-  const cubes = [];
-  const col = new THREE.Color();
-  const cube = (x, y, z, sx, sy, sz, c, j=0.1) => cubes.push([x, y, z, sx, sy, sz, c, 1 - R()*j]);
-  // 地面 + 道路
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(720, 720), new THREE.MeshLambertMaterial({ map:GRASS_TEX }));
-  ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
-  for(const [rot, y] of [[0, 0.012], [Math.PI/2, 0.014]]){
-    const tex = ROAD_TEX.clone(); tex.needsUpdate = true; tex.repeat.set(1, ARENA*2/8);
-    const road = new THREE.Mesh(new THREE.PlaneGeometry(8, ARENA*2), new THREE.MeshLambertMaterial({ map:tex }));
-    road.rotation.set(-Math.PI/2, 0, rot); road.position.y = y; road.receiveShadow = true; scene.add(road);
-  }
-  // 泥土斑块
-  for(let i=0;i<46;i++){ const x = (R()*2-1)*ARENA, z = (R()*2-1)*ARENA; if(Math.abs(x) < 6 || Math.abs(z) < 6) continue;
-    cube(x, 0.015, z, 3 + R()*6, 0.03, 3 + R()*6, R() < 0.5 ? 0x8a7350 : 0x7a6a48, 0.08); }
+scene.add(World.g);
 
-  const occ = [];
-  const free = (x, z, r) => {
-    if(Math.abs(x) < 5.5 + r || Math.abs(z) < 5.5 + r) return false;
-    if(Math.hypot(x, z) < 18 + r) return false;
-    if(Math.abs(x) > ARENA - 5 - r || Math.abs(z) > ARENA - 5 - r) return false;
-    for(const o of occ) if(Math.hypot(x - o.x, z - o.z) < r + o.r + 2.5) return false;
-    return true;
-  };
-  const place = (r, fn) => { for(let i=0;i<60;i++){ const x = (R()*2-1)*ARENA, z = (R()*2-1)*ARENA; if(free(x, z, r)){ occ.push({ x, z, r }); fn(x, z); return; } } };
-
-  // 废墟房屋：方块墙，随机缺口，门洞
-  const ruin = (cx, cz) => {
-    const w = 6 + ((R()*5)|0), d = 6 + ((R()*5)|0), H = 2 + ((R()*3)|0);
-    const brick = R() < 0.5, base = brick ? 0xa65a3e : 0xa49a8c, trim = brick ? 0x8a4430 : 0x8a8276;
-    const x0 = Math.floor(cx - w/2), z0 = Math.floor(cz - d/2), door = (R()*4)|0;
-    const sides = [
-      { n:w, at:i => [x0 + i, z0] }, { n:w, at:i => [x0 + i, z0 + d - 1] },
-      { n:d - 2, at:i => [x0, z0 + 1 + i] }, { n:d - 2, at:i => [x0 + w - 1, z0 + 1 + i] }];
-    sides.forEach((s, si) => {
-      const hs = [];
-      const gap = R() < 0.6 ? (R()*s.n)|0 : -9, gapW = 1 + ((R()*3)|0);
-      for(let i=0;i<s.n;i++){
-        let h = H - (R() < 0.35 ? 1 + ((R()*H)|0) : 0);
-        if(si === door && Math.abs(i - (s.n - 1)/2) < 1) h = 0;
-        if(i >= gap && i < gap + gapW) h = Math.min(h, (R()*1.5)|0);
-        hs.push(Math.max(0, h));
+// 搭地图用的小工具：方块（统一合进一个 InstancedMesh）、地面平面、常用道具
+function worldKit(seed){
+  const rng = seeded(seed), R = () => rng(), cubes = [];
+  const cube = (x, y, z, sx, sy, sz, c, j=0.1, rx=0) => cubes.push([x, y, z, sx, sy, sz, c, 1 - R()*j, rx]);
+  const K = {
+    R, cube,
+    plane(w, l, tex, color, x, y, z, rpx=1, rpy=1){
+      let map = null;
+      if(tex){ map = tex.clone(); map.needsUpdate = true; map.repeat.set(rpx, rpy); map._own = true; }
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, l), new THREE.MeshLambertMaterial({ map, color }));
+      m.rotation.x = -Math.PI/2; m.position.set(x, y, z); m.receiveShadow = true; World.g.add(m); return m;
+    },
+    tree(x, z, noCol){
+      const h = 3 + ((R()*3)|0), tw = 0.7;
+      for(let y=0;y<h;y++) cube(x, y + 0.5, z, tw, 1, tw, 0x6a4a2c, 0.12);
+      const lc = R() < 0.3 ? 0x5a9a3a : 0x4a8a34;
+      for(let dx=-1;dx<=1;dx++) for(let dz=-1;dz<=1;dz++) for(let dy=0;dy<2;dy++){
+        if(Math.abs(dx) + Math.abs(dz) === 2 && (dy === 1 || R() < 0.5)) continue;
+        cube(x + dx*1.1, h + dy*1.1, z + dz*1.1, 1.1, 1.1, 1.1, lc, 0.22);
       }
-      for(let i=0;i<s.n;i++){
-        const [x, z] = s.at(i);
-        for(let y=0;y<hs[i];y++) cube(x + 0.5, y + 0.5, z + 0.5, 1, 1, 1, (y === hs[i] - 1 && R() < 0.4) ? trim : base, 0.14);
-      }
-      // 连续墙段合并成一个碰撞盒
-      let st = -1, mh = 0;
-      for(let i=0;i<=s.n;i++){
-        const h = i < s.n ? hs[i] : 0;
-        if(h > 0){ if(st < 0){ st = i; mh = 0; } mh = Math.max(mh, h); }
-        else if(st >= 0){ const [ax, az] = s.at(st), [bx, bz] = s.at(i - 1); World.addBox(ax, az, bx + 1, bz + 1, mh, base); st = -1; }
-      }
-    });
-    // 屋内瓦砾
-    for(let i=0;i<4;i++) cube(x0 + 1.5 + R()*(w - 3), 0.2, z0 + 1.5 + R()*(d - 3), 0.5 + R()*0.6, 0.4, 0.5 + R()*0.6, trim, 0.2);
+      cube(x, h + 2.2, z, 1.1, 1.1, 1.1, lc, 0.2);
+      if(!noCol) World.addBox(x - 0.4, z - 0.4, x + 0.4, z + 0.4, h + 2, 0x6a4a2c);
+    },
+    crates(x, z){
+      const n = 1 + ((R()*4)|0), s = 1.25, ps = [[0,0],[s,0],[0,s],[s,s]];
+      let mx = 0, mz = 0;
+      for(let i=0;i<n;i++){ const [px, pz] = ps[i]; cube(x + px, s/2, z + pz, s, s, s, 0x9a6a36, 0.18); mx = Math.max(mx, px); mz = Math.max(mz, pz); }
+      if(n >= 3 && R() < 0.7) cube(x + s/2, s*1.5, z + s/2*(n > 3 ? 1 : 0), s, s, s, 0xa87840, 0.18);
+      World.addBox(x - s/2, z - s/2, x + mx + s/2, z + mz + s/2, n >= 3 ? s*2 : s, 0x9a6a36);
+    },
+    wreck(x, z, rotArg){
+      const rot = rotArg ?? (R() < 0.5), c = [0x8a3a2c, 0x3a5a7a, 0x6a6a5a, 0x7a5a2a][(R()*4)|0];
+      const P = (lx, ly, lz, sx, sy, sz, cc) => rot ? cube(x + lz, ly, z + lx, sz, sy, sx, cc, 0.15) : cube(x + lx, ly, z + lz, sx, sy, sz, cc, 0.15);
+      P(0, 0.85, 0, 2.0, 0.8, 4.2, c); P(0, 1.6, 0.3, 1.8, 0.7, 2.0, c); P(0, 1.6, -0.75, 1.7, 0.5, 0.1, 0x223040);
+      for(const sx of [-1, 1]) for(const sz of [-1.3, 1.3]) P(sx*1.0, 0.4, sz, 0.4, 0.8, 0.8, 0x1a1a1a);
+      if(rot) World.addBox(x - 2.1, z - 1.1, x + 2.1, z + 1.1, 2, c); else World.addBox(x - 1.1, z - 2.1, x + 1.1, z + 2.1, 2, c);
+    },
+    barrier(x, z, rotArg, nArg){
+      const rot = rotArg ?? (R() < 0.5), n = nArg ?? 2 + ((R()*3)|0);
+      for(let i=0;i<n;i++){ const o = (i - (n - 1)/2)*3.1;
+        if(rot) cube(x + o, 0.55, z, 3, 1.1, 0.7, 0xb8b2a6, 0.1); else cube(x, 0.55, z + o, 0.7, 1.1, 3, 0xb8b2a6, 0.1); }
+      const L = n*3.1/2;
+      if(rot) World.addBox(x - L, z - 0.35, x + L, z + 0.35, 1.1, 0xb8b2a6); else World.addBox(x - 0.35, z - L, x + 0.35, z + L, 1.1, 0xb8b2a6);
+    },
+    rock(x, z){
+      const s = 1.4 + R()*1.4;
+      cube(x, s*0.45, z, s, s*0.9, s*1.1, 0x8a8a86, 0.18); cube(x + s*0.5, s*0.3, z + s*0.3, s*0.7, s*0.6, s*0.7, 0x7a7a76, 0.18);
+      World.addBox(x - s*0.55, z - s*0.6, x + s*0.85, z + s*0.65, s*0.9, 0x8a8a86);
+    },
+    // 路灯：dir = 灯臂伸出的方向（+1 朝 +x，-1 朝 -x）
+    lamp(x, z, dir=1){
+      cube(x, 2.6, z, 0.25, 5.2, 0.25, 0x3a3a3e, 0.05); cube(x + 0.6*dir, 5.1, z, 1.4, 0.2, 0.3, 0x3a3a3e, 0.05);
+      cube(x + 1.1*dir, 4.95, z, 0.5, 0.15, 0.4, 0xfff0b0, 0); World.addBox(x - 0.2, z - 0.2, x + 0.2, z + 0.2, 5, 0x3a3a3e);
+    },
+    // 远处城市剪影
+    skyline(n, r0, r1, cols, base=0){
+      for(let i=0;i<n;i++){ const a = i/n*Math.PI*2 + R()*0.1, r = r0 + R()*(r1 - r0), w = 10 + R()*16, h = 12 + R()*34 - base;
+        cube(Math.cos(a)*r, base + h/2, Math.sin(a)*r, w, h, w*(0.6 + R()*0.6), cols[(R()*cols.length)|0], 0.1); }
+    },
+    finish(){
+      const mesh = new THREE.InstancedMesh(boxGeo, new THREE.MeshLambertMaterial({ map:BLOCK_TEX }), cubes.length);
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new V3(), s = new V3(), col = new THREE.Color();
+      cubes.forEach((c, i) => { p.set(c[0], c[1], c[2]); s.set(c[3], c[4], c[5]); q.setFromEuler(e.set(c[8], 0, 0)); m.compose(p, q, s); mesh.setMatrixAt(i, m); col.setHex(c[6]).multiplyScalar(c[7]); mesh.setColorAt(i, col); });
+      mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
+      World.g.add(mesh);
+    },
   };
-  const tree = (x, z, noCol) => {
-    const h = 3 + ((R()*3)|0), tw = 0.7;
-    for(let y=0;y<h;y++) cube(x, y + 0.5, z, tw, 1, tw, 0x6a4a2c, 0.12);
-    const lc = R() < 0.3 ? 0x5a9a3a : 0x4a8a34;
-    for(let dx=-1;dx<=1;dx++) for(let dz=-1;dz<=1;dz++) for(let dy=0;dy<2;dy++){
-      if(Math.abs(dx) + Math.abs(dz) === 2 && (dy === 1 || R() < 0.5)) continue;
-      cube(x + dx*1.1, h + dy*1.1, z + dz*1.1, 1.1, 1.1, 1.1, lc, 0.22);
-    }
-    cube(x, h + 2.2, z, 1.1, 1.1, 1.1, lc, 0.2);
-    if(!noCol) World.addBox(x - 0.4, z - 0.4, x + 0.4, z + 0.4, h + 2, 0x6a4a2c);
-  };
-  const crates = (x, z) => {
-    const n = 1 + ((R()*4)|0), s = 1.25, ps = [[0,0],[s,0],[0,s],[s,s]];
-    let mx = 0, mz = 0;
-    for(let i=0;i<n;i++){ const [px, pz] = ps[i]; cube(x + px, s/2, z + pz, s, s, s, 0x9a6a36, 0.18); mx = Math.max(mx, px); mz = Math.max(mz, pz); }
-    if(n >= 3 && R() < 0.7) cube(x + s/2, s*1.5, z + s/2*(n > 3 ? 1 : 0), s, s, s, 0xa87840, 0.18);
-    World.addBox(x - s/2, z - s/2, x + mx + s/2, z + mz + s/2, n >= 3 ? s*2 : s, 0x9a6a36);
-  };
-  const wreck = (x, z) => {
-    const rot = R() < 0.5, c = [0x8a3a2c, 0x3a5a7a, 0x6a6a5a, 0x7a5a2a][(R()*4)|0];
-    const P = (lx, ly, lz, sx, sy, sz, cc) => rot ? cube(x + lz, ly, z + lx, sz, sy, sx, cc, 0.15) : cube(x + lx, ly, z + lz, sx, sy, sz, cc, 0.15);
-    P(0, 0.85, 0, 2.0, 0.8, 4.2, c); P(0, 1.6, 0.3, 1.8, 0.7, 2.0, c); P(0, 1.6, -0.75, 1.7, 0.5, 0.1, 0x223040);
-    for(const sx of [-1, 1]) for(const sz of [-1.3, 1.3]) P(sx*1.0, 0.4, sz, 0.4, 0.8, 0.8, 0x1a1a1a);
-    if(rot) World.addBox(x - 2.1, z - 1.1, x + 2.1, z + 1.1, 2, c); else World.addBox(x - 1.1, z - 2.1, x + 1.1, z + 2.1, 2, c);
-  };
-  const barrier = (x, z) => {
-    const rot = R() < 0.5, n = 2 + ((R()*3)|0);
-    for(let i=0;i<n;i++){ const o = (i - (n - 1)/2)*3.1;
-      if(rot) cube(x + o, 0.55, z, 3, 1.1, 0.7, 0xb8b2a6, 0.1); else cube(x, 0.55, z + o, 0.7, 1.1, 3, 0xb8b2a6, 0.1); }
-    const L = n*3.1/2;
-    if(rot) World.addBox(x - L, z - 0.35, x + L, z + 0.35, 1.1, 0xb8b2a6); else World.addBox(x - 0.35, z - L, x + 0.35, z + L, 1.1, 0xb8b2a6);
-  };
-  const rock = (x, z) => {
-    const s = 1.4 + R()*1.4;
-    cube(x, s*0.45, z, s, s*0.9, s*1.1, 0x8a8a86, 0.18); cube(x + s*0.5, s*0.3, z + s*0.3, s*0.7, s*0.6, s*0.7, 0x7a7a76, 0.18);
-    World.addBox(x - s*0.55, z - s*0.6, x + s*0.85, z + s*0.65, s*0.9, 0x8a8a86);
-  };
-  const lamp = (x, z) => {
-    cube(x, 2.6, z, 0.25, 5.2, 0.25, 0x3a3a3e, 0.05); cube(x + 0.6, 5.1, z, 1.4, 0.2, 0.3, 0x3a3a3e, 0.05);
-    cube(x + 1.1, 4.95, z, 0.5, 0.15, 0.4, 0xfff0b0, 0); World.addBox(x - 0.2, z - 0.2, x + 0.2, z + 0.2, 5, 0x3a3a3e);
-  };
-  for(let i=0;i<11;i++) place(7, (x, z) => ruin(x, z));
-  for(let i=0;i<16;i++) place(2, crates);
-  for(let i=0;i<7;i++) place(2.6, wreck);
-  for(let i=0;i<9;i++) place(4.5, barrier);
-  for(let i=0;i<12;i++) place(1.6, rock);
-  for(let i=0;i<26;i++) place(1.6, (x, z) => tree(x, z));
-  // 路灯沿道路
-  for(let i=-3;i<=3;i++){ if(i === 0) continue; lamp(5.2, i*20 + 4); lamp(i*20 - 4, -5.4); }
-  // 围墙
-  for(let i=-ARENA;i<ARENA;i+=2){
-    for(const [x, z, sx, sz] of [[i + 1, -ARENA - 0.5, 2, 1], [i + 1, ARENA + 0.5, 2, 1], [-ARENA - 0.5, i + 1, 1, 2], [ARENA + 0.5, i + 1, 1, 2]]){
-      const h = 2.2 + (R() < 0.2 ? 0.8 : 0);
-      cube(x, h/2, z, sx, h, sz, 0x9a948a, 0.14);
-      if(R() < 0.15) cube(x, h + 0.25, z, sx*0.5, 0.5, sz*0.5, 0x8a847a, 0.14);
-    }
-  }
-  World.addBox(-ARENA - 1, -ARENA - 1, ARENA + 1, -ARENA, 2.4, 0x9a948a);
-  World.addBox(-ARENA - 1, ARENA, ARENA + 1, ARENA + 1, 2.4, 0x9a948a);
-  World.addBox(-ARENA - 1, -ARENA, -ARENA, ARENA, 2.4, 0x9a948a);
-  World.addBox(ARENA, -ARENA, ARENA + 1, ARENA, 2.4, 0x9a948a);
-  // 墙外：树林 + 远处楼房剪影
-  for(let i=0;i<90;i++){ const a = R()*Math.PI*2, r = ARENA + 5 + R()*30, x = clamp(Math.cos(a)*r*1.3, -ARENA - 40, ARENA + 40), z = clamp(Math.sin(a)*r*1.3, -ARENA - 40, ARENA + 40);
-    if(Math.abs(x) > ARENA + 4 || Math.abs(z) > ARENA + 4) tree(x, z, true); }
-  for(let i=0;i<34;i++){ const a = i/34*Math.PI*2 + R()*0.1, r = 150 + R()*40, w = 10 + R()*16, h = 12 + R()*34;
-    cube(Math.cos(a)*r, h/2, Math.sin(a)*r, w, h, w*(0.6 + R()*0.6), [0x8a8298, 0x9a8f9a, 0x7a7890][(R()*3)|0], 0.1); }
-
-  const mesh = new THREE.InstancedMesh(boxGeo, new THREE.MeshLambertMaterial({ map:BLOCK_TEX }), cubes.length);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new V3(), s = new V3();
-  cubes.forEach((c, i) => { p.set(c[0], c[1], c[2]); s.set(c[3], c[4], c[5]); m.compose(p, q, s); mesh.setMatrixAt(i, m); col.setHex(c[6]).multiplyScalar(c[7]); mesh.setColorAt(i, col); });
-  mesh.castShadow = true; mesh.receiveShadow = true;
-  scene.add(mesh);
+  return K;
 }
+
+const MAPS = {
+  /* ---- 小镇（无尽模式）：四周围墙的方形场地，废墟、树、箱子、残骸 ---- */
+  town(){
+    World.set({ hx:ARENA, hz:ARENA, lx:ARENA - 2.6, lz:ARENA - 2.6, deck:Infinity, groundC:0x6a5a3a, start:{ x:0, z:8, yaw:0 } });
+    const K = worldKit(20261124), R = K.R, cube = K.cube;
+    // 地面 + 道路
+    K.plane(720, 720, GRASS_TEX, 0xffffff, 0, 0, 0, 180, 180);
+    for(const [rot, y] of [[0, 0.012], [Math.PI/2, 0.014]]){
+      const road = K.plane(8, ARENA*2, ROAD_TEX, 0xffffff, 0, y, 0, 1, ARENA*2/8); road.rotation.set(-Math.PI/2, 0, rot);
+    }
+    // 泥土斑块
+    for(let i=0;i<46;i++){ const x = (R()*2-1)*ARENA, z = (R()*2-1)*ARENA; if(Math.abs(x) < 6 || Math.abs(z) < 6) continue;
+      cube(x, 0.015, z, 3 + R()*6, 0.03, 3 + R()*6, R() < 0.5 ? 0x8a7350 : 0x7a6a48, 0.08); }
+
+    const occ = [];
+    const free = (x, z, r) => {
+      if(Math.abs(x) < 5.5 + r || Math.abs(z) < 5.5 + r) return false;
+      if(Math.hypot(x, z) < 18 + r) return false;
+      if(Math.abs(x) > ARENA - 5 - r || Math.abs(z) > ARENA - 5 - r) return false;
+      for(const o of occ) if(Math.hypot(x - o.x, z - o.z) < r + o.r + 2.5) return false;
+      return true;
+    };
+    const place = (r, fn) => { for(let i=0;i<60;i++){ const x = (R()*2-1)*ARENA, z = (R()*2-1)*ARENA; if(free(x, z, r)){ occ.push({ x, z, r }); fn(x, z); return; } } };
+
+    // 废墟房屋：方块墙，随机缺口，门洞
+    const ruin = (cx, cz) => {
+      const w = 6 + ((R()*5)|0), d = 6 + ((R()*5)|0), H = 2 + ((R()*3)|0);
+      const brick = R() < 0.5, base = brick ? 0xa65a3e : 0xa49a8c, trim = brick ? 0x8a4430 : 0x8a8276;
+      const x0 = Math.floor(cx - w/2), z0 = Math.floor(cz - d/2), door = (R()*4)|0;
+      const sides = [
+        { n:w, at:i => [x0 + i, z0] }, { n:w, at:i => [x0 + i, z0 + d - 1] },
+        { n:d - 2, at:i => [x0, z0 + 1 + i] }, { n:d - 2, at:i => [x0 + w - 1, z0 + 1 + i] }];
+      sides.forEach((s, si) => {
+        const hs = [];
+        const gap = R() < 0.6 ? (R()*s.n)|0 : -9, gapW = 1 + ((R()*3)|0);
+        for(let i=0;i<s.n;i++){
+          let h = H - (R() < 0.35 ? 1 + ((R()*H)|0) : 0);
+          if(si === door && Math.abs(i - (s.n - 1)/2) < 1) h = 0;
+          if(i >= gap && i < gap + gapW) h = Math.min(h, (R()*1.5)|0);
+          hs.push(Math.max(0, h));
+        }
+        for(let i=0;i<s.n;i++){
+          const [x, z] = s.at(i);
+          for(let y=0;y<hs[i];y++) cube(x + 0.5, y + 0.5, z + 0.5, 1, 1, 1, (y === hs[i] - 1 && R() < 0.4) ? trim : base, 0.14);
+        }
+        // 连续墙段合并成一个碰撞盒
+        let st = -1, mh = 0;
+        for(let i=0;i<=s.n;i++){
+          const h = i < s.n ? hs[i] : 0;
+          if(h > 0){ if(st < 0){ st = i; mh = 0; } mh = Math.max(mh, h); }
+          else if(st >= 0){ const [ax, az] = s.at(st), [bx, bz] = s.at(i - 1); World.addBox(ax, az, bx + 1, bz + 1, mh, base); st = -1; }
+        }
+      });
+      // 屋内瓦砾
+      for(let i=0;i<4;i++) cube(x0 + 1.5 + R()*(w - 3), 0.2, z0 + 1.5 + R()*(d - 3), 0.5 + R()*0.6, 0.4, 0.5 + R()*0.6, trim, 0.2);
+    };
+    for(let i=0;i<11;i++) place(7, (x, z) => ruin(x, z));
+    for(let i=0;i<16;i++) place(2, K.crates);
+    for(let i=0;i<7;i++) place(2.6, (x, z) => K.wreck(x, z));
+    for(let i=0;i<9;i++) place(4.5, (x, z) => K.barrier(x, z));
+    for(let i=0;i<12;i++) place(1.6, K.rock);
+    for(let i=0;i<26;i++) place(1.6, (x, z) => K.tree(x, z));
+    // 路灯沿道路
+    for(let i=-3;i<=3;i++){ if(i === 0) continue; K.lamp(5.2, i*20 + 4); K.lamp(i*20 - 4, -5.4); }
+    // 围墙
+    for(let i=-ARENA;i<ARENA;i+=2){
+      for(const [x, z, sx, sz] of [[i + 1, -ARENA - 0.5, 2, 1], [i + 1, ARENA + 0.5, 2, 1], [-ARENA - 0.5, i + 1, 1, 2], [ARENA + 0.5, i + 1, 1, 2]]){
+        const h = 2.2 + (R() < 0.2 ? 0.8 : 0);
+        cube(x, h/2, z, sx, h, sz, 0x9a948a, 0.14);
+        if(R() < 0.15) cube(x, h + 0.25, z, sx*0.5, 0.5, sz*0.5, 0x8a847a, 0.14);
+      }
+    }
+    World.addBox(-ARENA - 1, -ARENA - 1, ARENA + 1, -ARENA, 2.4, 0x9a948a);
+    World.addBox(-ARENA - 1, ARENA, ARENA + 1, ARENA + 1, 2.4, 0x9a948a);
+    World.addBox(-ARENA - 1, -ARENA, -ARENA, ARENA, 2.4, 0x9a948a);
+    World.addBox(ARENA, -ARENA, ARENA + 1, ARENA, 2.4, 0x9a948a);
+    // 墙外：树林 + 远处楼房剪影
+    for(let i=0;i<90;i++){ const a = R()*Math.PI*2, r = ARENA + 5 + R()*30, x = clamp(Math.cos(a)*r*1.3, -ARENA - 40, ARENA + 40), z = clamp(Math.sin(a)*r*1.3, -ARENA - 40, ARENA + 40);
+      if(Math.abs(x) > ARENA + 4 || Math.abs(z) > ARENA + 4) K.tree(x, z, true); }
+    K.skyline(34, 150, 190, [0x8a8298, 0x9a8f9a, 0x7a7890]);
+    K.finish();
+  },
+
+  /* ---- 街道：一条长直街，两边是连排楼房，路上有废弃车辆和路障 ---- */
+  street(){
+    const HX = 12, HZ = 150, L = HZ*2 + 80;
+    World.set({ hx:HX, hz:HZ, lx:HX - 1.5, lz:HZ - 2.6, deck:Infinity, groundC:0x55524e, start:{ x:0, z:HZ - 25, yaw:0 } });
+    const K = worldKit(7171), R = K.R, cube = K.cube;
+    K.plane(500, 800, null, 0x4a4846, 0, -0.01, 0);
+    K.plane(16, L, STREET_TEX, 0xffffff, 0, 0.012, 0, 1, L/8);
+    // 人行道 + 路缘
+    for(const sx of [-1, 1]){
+      K.plane(4, L, null, 0x9c978e, sx*10, 0.02, 0);
+      for(let z=-L/2;z<L/2;z+=4) cube(sx*8.1, 0.07, z + 2, 0.25, 0.14, 3.96, 0xbab5aa, 0.06);
+    }
+    // 两边连排楼房（朝街一面有窗户、店面卷帘门、雨棚）
+    const PAL = [0xa65a3e, 0x9a8f84, 0xb8a07a, 0x7a8a96, 0xa8a49a, 0x8a6a5a, 0xc4b08a];
+    for(const sx of [-1, 1]){
+      let z = -L/2;
+      while(z < L/2){
+        const w = 8 + ((R()*7)|0), h = 7 + ((R()*5)|0)*3, d = 12, c = PAL[(R()*PAL.length)|0];
+        cube(sx*(HX + d/2), h/2, z + w/2, d, h, w - 0.3, c, 0.08);
+        cube(sx*(HX + d/2 - 0.2), h + 0.25, z + w/2, d + 0.4, 0.5, w, 0x6a625a, 0.1);
+        for(let fy=4.6;fy<h - 1;fy+=3) for(let wz=z + 1.8;wz<z + w - 1.2;wz+=2.4){
+          cube(sx*(HX - 0.04), fy, wz, 0.12, 1.4, 1.2, R() < 0.12 ? 0xffe39a : 0x2c3640, 0.15);
+        }
+        if(R() < 0.75){
+          cube(sx*(HX - 0.05), 1.3, z + w/2, 0.12, 2.4, w*0.6, [0x6a7078, 0x8a5a3a, 0x4a5a6a][(R()*3)|0], 0.15);
+          cube(sx*(HX - 0.7), 3.3, z + w/2, 1.4, 0.15, w*0.7, [0xd8443a, 0x3a8ad8, 0xe8b62a, 0x3aa860][(R()*4)|0], 0.1);
+        }
+        z += w;
+      }
+      World.addBox(sx > 0 ? HX : -HX - 14, -L/2, sx > 0 ? HX + 14 : -HX, L/2, 9, 0x9a8f84);
+      // 人行道路灯（灯臂朝马路）和行道树
+      for(let z=-HZ + 6;z<HZ;z+=20) K.lamp(sx*9.6, z + (sx > 0 ? 0 : 10), -sx);
+      for(let z=-HZ + 16;z<HZ - 10;z+=40) if(R() < 0.7) K.tree(sx*10.4, z + (sx > 0 ? 6 : -4));
+    }
+    // 马路上的废弃车辆、路障、箱子（起点附近留空）
+    for(let z=-HZ + 14;z<HZ - 45;z+=11 + R()*9){
+      const x = (R()*2 - 1)*5.5, k = R();
+      if(k < 0.55) K.wreck(x, z); else if(k < 0.8) K.barrier(x, z, true, 2); else K.crates(x, z);
+    }
+    // 两头的封锁线：路障 + 横停的车
+    for(const sz of [-1, 1]){
+      K.barrier(-6, sz*(HZ + 1.2), true, 2); K.barrier(6, sz*(HZ + 1.2), true, 2); K.wreck(0, sz*(HZ + 3), true);
+      World.addBox(-HX, sz > 0 ? HZ : -HZ - 4, HX, sz > 0 ? HZ + 4 : -HZ, 2, 0xb8b2a6);
+    }
+    // 远处高楼
+    for(const sx of [-1, 1]) for(let z=-L/2;z<L/2;z+=22){ const h = 26 + R()*40, w = 12 + R()*12;
+      cube(sx*(40 + R()*50), h/2, z + R()*10, w, h, w, [0x8a8298, 0x9a8f9a, 0x7a7890, 0x8a8a96][(R()*4)|0], 0.08); }
+    K.finish();
+  },
+
+  /* ---- 大桥：长直的跨海大桥，两侧护栏，桥塔和斜拉索，下面是水 ---- */
+  bridge(){
+    const HX = 8.5, HZ = 160, L = HZ*2 + 70, DW = 21;
+    World.set({ hx:HX, hz:HZ, lx:HX - 1.5, lz:HZ - 2.6, deck:DW/2, groundC:0x55524e, start:{ x:0, z:HZ - 25, yaw:0 } });
+    const K = worldKit(9191), R = K.R, cube = K.cube;
+    K.plane(1600, 1600, WATER_TEX, 0xffffff, 0, -18, 0, 160, 160);
+    K.plane(17, L, STREET_TEX, 0xffffff, 0, 0.012, 0, 1, L/8);
+    K.plane(DW, L, null, 0x8a8780, 0, 0.004, 0);
+    // 桥面板（侧面看得到厚度）+ 底下的纵梁
+    for(let z=-L/2;z<L/2;z+=20){ cube(0, -1.0, z + 10, DW + 0.6, 2.0, 20, 0x948e84, 0.06); cube(0, -2.4, z + 10, DW - 5, 0.8, 20, 0x6a665e, 0.08); }
+    for(const sx of [-1, 1]){
+      // 护栏：混凝土墩 + 钢扶手
+      for(let z=-L/2;z<L/2;z+=3) cube(sx*(HX + 0.6), 0.55, z + 1.5, 0.8, 1.1, 2.9, 0xc8c2b6, 0.08);
+      for(let z=-L/2;z<L/2;z+=6){ cube(sx*(HX + 0.6), 1.5, z + 3, 0.14, 0.14, 6, 0x4a5058, 0.05); cube(sx*(HX + 0.6), 1.3, z + 0.2, 0.12, 0.4, 0.12, 0x4a5058, 0.05); }
+      World.addBox(sx > 0 ? HX : -HX - 1.2, -L/2, sx > 0 ? HX + 1.2 : -HX, L/2, 1.2, 0xc8c2b6);
+      // 外侧窄边 + 栏杆
+      for(let z=-L/2;z<L/2;z+=4) cube(sx*(DW/2 - 0.1), 0.6, z + 2, 0.1, 1.2, 0.1, 0x4a5058, 0.05);
+      for(let z=-L/2;z<L/2;z+=12) cube(sx*(DW/2 - 0.1), 1.2, z + 6, 0.1, 0.1, 12, 0x4a5058, 0.05);
+      for(let z=-HZ + 10;z<HZ;z+=25) K.lamp(sx*(HX + 0.6), z, -sx);
+    }
+    // 桥塔 + 主缆 + 吊索 + 桥墩
+    const TZ = [-150, -75, 0, 75, 150], TOP = 19, TC = 0xa89a86;
+    for(const tz of TZ){
+      for(const sx of [-1, 1]){ cube(sx*(DW/2 + 1.3), (TOP + 1 - 22)/2, tz, 2.6, TOP + 23, 2.6, TC, 0.06); World.addBox(sx*(DW/2 + 1.3) - 1.3, tz - 1.3, sx*(DW/2 + 1.3) + 1.3, tz + 1.3, TOP, TC); }
+      cube(0, TOP, tz, DW + 5.2, 2, 2.6, TC, 0.06); cube(0, 12.5, tz, DW + 5.2, 1.2, 1.8, TC, 0.06);
+      cube(0, -10, tz, DW - 2, 16, 6, 0x8a8478, 0.06);
+    }
+    for(const sx of [-1, 1]) for(let i=0;i<TZ.length - 1;i++){
+      const z0 = TZ[i], z1 = TZ[i + 1], mid = (z0 + z1)/2, half = (z1 - z0)/2, x = sx*(DW/2 + 0.3);
+      const yAt = z => TOP - 13*(1 - ((z - mid)/half)**2);
+      for(let z=z0;z<z1;z+=3){ const ya = yAt(z), yb = yAt(z + 3), len = Math.hypot(3, yb - ya);
+        cube(x, (ya + yb)/2, z + 1.5, 0.35, 0.35, len, 0x5a6068, 0.04, -Math.atan2(yb - ya, 3)); }
+      for(let z=z0 + 6;z<z1 - 2;z+=6){ const yc = yAt(z); cube(x, (yc + 1.6)/2, z, 0.08, yc - 1.6, 0.08, 0x5a6068, 0.04); }
+    }
+    // 桥上的废弃车辆、路障（起点附近留空）
+    for(let z=-HZ + 14;z<HZ - 45;z+=14 + R()*10){
+      const x = (R()*2 - 1)*4, k = R();
+      if(k < 0.6) K.wreck(x, z, false); else if(k < 0.85) K.barrier(x, z, true, 1); else K.crates(x, z);
+    }
+    // 两头的封锁线
+    for(const sz of [-1, 1]){
+      K.barrier(-4.5, sz*(HZ + 1.2), true, 2); K.barrier(4.5, sz*(HZ + 1.2), true, 1); K.wreck(0, sz*(HZ + 3.5), true);
+      World.addBox(-HX, sz > 0 ? HZ : -HZ - 4, HX, sz > 0 ? HZ + 4 : -HZ, 2, 0xb8b2a6);
+    }
+    // 远处的海岸城市
+    K.skyline(40, 170, 230, [0x8a8298, 0x9a8f9a, 0x7a7890, 0x9a9aa6], -18);
+    K.finish();
+  },
+};
+World.build('town');
 
 /* =====================================================================
    5. 粒子（方块）：lit = 受光照（尸块 / 尘土 / 碎屑），glow = 自发光（火花 / 火焰）
@@ -1139,7 +1312,7 @@ const ZINFO = {
   spitter:'远程吐酸，看到地上的绿圈就开车躲开',
   boss:'会蓄力冲锋：地上出现红色通道时赶快让开',
 };
-const MAX_Z = 70, PARTS = 21, EXTRA_PART = 14;
+const MAX_Z = 130, PARTS = 21, EXTRA_PART = 14;
 const zMesh = new THREE.InstancedMesh(boxGeo, new THREE.MeshLambertMaterial({ map:BLOCK_TEX }), MAX_Z*PARTS);
 zMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); zMesh.castShadow = true; zMesh.frustumCulled = false;
 { const w = new THREE.Color(1, 1, 1); for(let i=0;i<MAX_Z*PARTS;i++){ zMesh.setMatrixAt(i, ZERO_M); zMesh.setColorAt(i, w); } }
@@ -1322,7 +1495,7 @@ const Zombies = {
         const n = World.pushOut(z.pos, z.r);
         if(n && !ai && z.avoidT <= 0 && n.x*mx + n.z*mz < -0.4){ z.avoidT = rand(0.5, 1.1); z.avoidDir = Math.sign(n.x*mz - n.z*mx) || 1; }
       }
-      z.pos.x = clamp(z.pos.x, -ARENA + z.r, ARENA - z.r); z.pos.z = clamp(z.pos.z, -ARENA + z.r, ARENA - z.r);
+      z.pos.x = clamp(z.pos.x, -World.hx + z.r, World.hx - z.r); z.pos.z = clamp(z.pos.z, -World.hz + z.r, World.hz - z.r);
       // 不能穿进战车
       const cp2 = carClosest(z.pos.x, z.pos.z), ex = z.pos.x - cp2.x, ez = z.pos.z - cp2.z, ed = Math.hypot(ex, ez) || 0.001, minD = CAR_R + z.r;
       if(ed < minD && !Car.dead){
@@ -1369,7 +1542,7 @@ const Zombies = {
           z.dashHit = true; Car.damage(C.dmg, z.pos); Car.vel.x += z.dashX*C.kb; Car.vel.z += z.dashZ*C.kb; Cam.trauma(0.7); Sfx.thud(1);
         }
         const nx = z.pos.x + z.dashX*0.8, nz = z.pos.z + z.dashZ*0.8;
-        let blocked = Math.abs(nx) > ARENA - 2 || Math.abs(nz) > ARENA - 2;
+        let blocked = Math.abs(nx) > World.hx - 1 || Math.abs(nz) > World.hz - 1;
         if(!blocked) for(const b of World.boxes){ if(nx > b.x0 - z.r && nx < b.x1 + z.r && nz > b.z0 - z.r && nz < b.z1 + z.r){ blocked = true; break; } }
         if(z.dashD >= C.dist || blocked){ z.bst = 'recover'; z.bT = 0; BossLane.hide(); if(blocked){ Cam.trauma(0.3); Sfx.thud(0.7); } }
         return ai; }
@@ -1514,7 +1687,7 @@ const Pickups = {
   },
   randomSpawn(){
     for(let i=0;i<20;i++){
-      const a = Math.random()*Math.PI*2, r = rand(14, 34), x = clamp(Car.pos.x + Math.cos(a)*r, -ARENA + 4, ARENA - 4), z = clamp(Car.pos.z + Math.sin(a)*r, -ARENA + 4, ARENA - 4);
+      const a = Math.random()*Math.PI*2, r = rand(14, 34), x = clamp(Car.pos.x + Math.cos(a)*r, -World.hx + 4, World.hx - 4), z = clamp(Car.pos.z + Math.sin(a)*r, -World.hz + 4, World.hz - 4);
       const p = { x, z }; if(!World.pushOut(p, 1.5)){ this.spawn(x, z); return; }
     }
   },
@@ -1562,13 +1735,13 @@ const Tracers = {
 /* =====================================================================
    10. 强化（每波结束三选一）
    ===================================================================== */
-const Up = { dmgMul:1, rateMul:1, heatMul:1, barrels:1, pierce:0, ramMul:1, ramArmor:false, speedMul:1, boomEvery:0, leech:0, headMul:2, lv:{} };
+const Up = { magnet:1, dmgMul:1, rateMul:1, heatMul:1, barrels:1, pierce:0, ramMul:1, ramArmor:false, speedMul:1, boomEvery:0, leech:0, headMul:2, lv:{} };
 const UP_EN = {
   dmg:['AP Cores','Bullet damage +20%'], rate:['Rapid Action','Fire rate +15%'], cool:['Liquid Cooling','Barrel heat-up -25%'],
   armor:['Composite Armor','Max HP +25, heals 25'], repair:['Field Repair','Heal 60% HP now'], twin:['Twin Barrels','Extra barrel set: +1 bullet per shot'],
   pierce:['Piercing Rounds','Bullets pierce 1 more zombie'], ram:['Steel Ram','Ram damage +60%, no damage from ramming heavies'],
   engine:['Turbo Engine','Move speed +12%'], boom:['Explosive Rounds','Every few shots explode'],
-  leech:['Salvage System','Heal 1 HP per kill'], head:['Precision Sights','Headshot damage +50%'],
+  leech:['Salvage System','Heal 1 HP per kill'], head:['Precision Sights','Headshot damage +50%'], magnet:['Magnet','XP pickup range +40%'],
 };
 const UPGRADES = [
   { id:'dmg',    ic:'💥', nm:'穿甲弹芯', ds:'子弹伤害 +20%', max:8, f(){ Up.dmgMul *= 1.2; } },
@@ -1583,9 +1756,11 @@ const UPGRADES = [
   { id:'boom',   ic:'🧨', nm:'爆裂弹', ds:'每隔几发打出一发爆炸弹', max:3, f(){ Up.boomEvery = [0, 9, 6, 4][Up.lv.boom]; } },
   { id:'leech',  ic:'♻️', nm:'回收系统', ds:'每击杀 1 只僵尸回复 1 生命', max:5, f(){ Up.leech++; } },
   { id:'head',   ic:'🎯', nm:'精准瞄准', ds:'爆头伤害 +50%', max:4, f(){ Up.headMul += 0.5; } },
+  { id:'magnet', ic:'🧲', nm:'磁吸装置', ds:'经验拾取范围 +40%', max:4, levelOnly:true, f(){ Up.magnet *= 1.4; } },
 ];
 function upgradeChoices(){
-  const pool = UPGRADES.filter(u => (Up.lv[u.id] || 0) < u.max && !(u.id === 'repair' && Car.hp > Car.maxHp*0.75));
+  const pool = UPGRADES.filter(u => (Up.lv[u.id] || 0) < u.max && !(u.id === 'repair' && Car.hp > Car.maxHp*0.75) && (!u.levelOnly || Level.on));
+  if(!pool.length) return [UPGRADES.find(u => u.id === 'repair')];
   const out = [];
   while(out.length < 3 && pool.length){ out.push(pool.splice((Math.random()*pool.length)|0, 1)[0]); }
   return out;
@@ -1596,7 +1771,7 @@ function upgradeChoices(){
    ===================================================================== */
 const Car = {
   pos:new V3(), vel:new V3(), yaw:0, pitch:0, body:0, hp:100, maxHp:100, dead:false, deadT:0, hurtT:0, ghost:100,
-  reset(){ this.pos.set(0, 0, 8); this.vel.set(0, 0, 0); this.yaw = 0; this.pitch = 0; this.body = 0; this.maxHp = 100; this.hp = 100; this.ghost = 100; this.dead = false; this.deadT = 0; carG.visible = true; ramSpikes.visible = !!Up.lv.ram; },
+  reset(){ const st = World.start; this.pos.set(st.x, 0, st.z); this.vel.set(0, 0, 0); this.yaw = st.yaw; this.pitch = 0; this.body = st.yaw; this.maxHp = 100; this.hp = 100; this.ghost = 100; this.dead = false; this.deadT = 0; carG.visible = true; ramSpikes.visible = !!Up.lv.ram; },
   heal(n){ this.hp = Math.min(this.maxHp, this.hp + n); },
   damage(n, from, acid){
     if(this.dead || Game.state !== 'play') return;
@@ -1653,7 +1828,7 @@ const Car = {
         if(vn < 0){ this.vel.x -= n.x*vn*1.2; this.vel.z -= n.z*vn*1.2; if(vn < -5){ Sfx.clank(clamp(-vn/10, 0.3, 1)); Cam.trauma(clamp(-vn/30, 0.1, 0.4)); FX.debris(new V3(p.x - n.x*CAR_R, 1, p.z - n.z*CAR_R), 0x8a8070, 5); } }
       }
     }
-    const lim = ARENA - 2.6; this.pos.x = clamp(this.pos.x, -lim, lim); this.pos.z = clamp(this.pos.z, -lim, lim);
+    this.pos.x = clamp(this.pos.x, -World.lx, World.lx); this.pos.z = clamp(this.pos.z, -World.lz, World.lz);
     // 车身朝向：朝移动方向；反向时倒车
     const sp = Math.hypot(this.vel.x, this.vel.z);
     if(!S.follow && sp > 0.6){
@@ -1925,7 +2100,7 @@ const Waves = {
   spawnOne(type){
     for(let i=0;i<24;i++){
       const a = Math.random()*Math.PI*2, r = rand(30, 54);
-      const x = clamp(Car.pos.x + Math.cos(a)*r, -ARENA + 3, ARENA - 3), z = clamp(Car.pos.z + Math.sin(a)*r, -ARENA + 3, ARENA - 3);
+      const x = clamp(Car.pos.x + Math.cos(a)*r, -World.hx + 3, World.hx - 3), z = clamp(Car.pos.z + Math.sin(a)*r, -World.hz + 3, World.hz - 3);
       if(Math.hypot(x - Car.pos.x, z - Car.pos.z) < 24) continue;
       const p = { x, z }; if(World.pushOut(p, 1.2*ZT[type].scale)) continue;
       const hp = type === 'boss' ? 1 + 0.5*(this.n/5 - 1) : this.hpMul;
@@ -1950,6 +2125,155 @@ const Waves = {
     }
     if(this.phase === 'clear'){ this.t -= dt; if(this.t <= 0 && !Car.dead) Game.showUpgrade(); }
   },
+};
+
+/* =====================================================================
+   13b. 关卡模式（学 Survivor.io）：坚持 5 分钟 → Boss 出场，打死 Boss 过关；杀怪掉经验块，经验满了三选一
+   ===================================================================== */
+const LEVELS = [
+  { id:'street', map:'street', name:['街道', 'Street'], dur:300, hp:1, bossHp:4, escorts:['brute', 'brute'],
+    cap:[18, 90], rate:[1.1, 4.2],
+    mix:f => ({ normal:1, runner:f > 0.08 ? 0.25 + 0.35*f : 0, exploder:f > 0.25 ? 0.12 : 0, spitter:f > 0.45 ? 0.1 : 0, brute:f > 0.6 ? 0.04 + 0.06*f : 0 }),
+    events:[ { t:60, k:'horde', n:16 }, { t:120, k:'elite' }, { t:165, k:'horde', n:22, type:'runner' }, { t:215, k:'elite' }, { t:240, k:'horde', n:28 }, { t:280, k:'horde', n:18, type:'exploder' } ] },
+  { id:'bridge', map:'bridge', name:['大桥', 'Bridge'], dur:300, hp:1.35, bossHp:6, escorts:['brute', 'brute', 'exploder', 'exploder'],
+    cap:[22, 105], rate:[1.4, 5.2],
+    mix:f => ({ normal:1, runner:0.3 + 0.3*f, exploder:f > 0.12 ? 0.16 : 0, spitter:f > 0.3 ? 0.13 : 0, brute:f > 0.45 ? 0.06 + 0.06*f : 0 }),
+    events:[ { t:45, k:'horde', n:18, type:'runner' }, { t:100, k:'elite' }, { t:140, k:'horde', n:26 }, { t:190, k:'elite' }, { t:205, k:'horde', n:22, type:'exploder' }, { t:250, k:'elite' }, { t:262, k:'horde', n:34 } ] },
+];
+const fmtT = s => { s = Math.max(0, Math.ceil(s)); return String((s/60)|0).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+const getCleared = () => { try { return JSON.parse(localStorage.getItem('fp_cleared') || '{}'); } catch(e){ return {}; } };
+const setCleared = id => { try { const c = getCleared(); c[id] = true; localStorage.setItem('fp_cleared', JSON.stringify(c)); } catch(e){} };
+
+const Level = {
+  on:false, cfg:null, t:0, phase:'fight', spawnT:0, ev:0, xp:0, lv:1, need:0, pend:0, wonT:0, burst:[], burstT:0, recycleT:0, killAll:false, seen:{},
+  needFor(lv){ return Math.round(5 + lv*3.2 + lv*lv*0.12); },
+  reset(cfg){
+    Object.assign(this, { on:!!cfg, cfg, t:0, phase:'fight', spawnT:1.5, ev:0, xp:0, lv:1, pend:0, wonT:0, burst:[], burstT:0, recycleT:0, killAll:false, seen:{} });
+    this.need = this.needFor(1);
+  },
+  f(){ return clamp(this.t/this.cfg.dur, 0, 1); },
+  hpMul(){ return this.cfg.hp*(1 + 1.6*this.f()); },
+  // 出生点：战车前后 24~50 米的路面上；少数从路边冒出来
+  spawnPos(type){
+    const H = World.hx - 1.2, Z = World.hz - 3, P = Car.pos, r = 1.2*ZT[type].scale;
+    for(let i=0;i<20;i++){
+      let x, z;
+      if(Math.random() < 0.22){ z = P.z + rand(-26, 26); x = (Math.random() < 0.5 ? -1 : 1)*rand(H - 2.5, H); }
+      else {
+        const s = Math.random() < 0.5 ? -1 : 1; z = P.z + s*rand(24, 50);
+        if(Math.abs(z) > Z) z = P.z - s*rand(24, 50);
+        x = rand(-H, H);
+      }
+      z = clamp(z, -Z, Z);
+      if(Math.hypot(x - P.x, z - P.z) < 16) continue;
+      const p = { x, z }; if(World.pushOut(p, r)) continue;
+      return p;
+    }
+    return null;
+  },
+  spawn(type, hpMul=this.hpMul()){
+    const p = this.spawnPos(type); if(!p) return null;
+    const z = Zombies.spawn(type, p.x, p.z, hpMul);
+    if(z && !this.seen[type]){ this.seen[type] = true; if(ZINFO[type]) HUD.toast(T('新敌人 · ' + ZNAME[type], 'New enemy · ' + ZNAME_EN[type]), 2.5); }
+    return z;
+  },
+  pick(w){
+    let sum = 0; for(const k in w) sum += w[k];
+    let r = Math.random()*sum; for(const k in w){ r -= w[k]; if(r <= 0) return k; }
+    return 'normal';
+  },
+  update(dt){
+    const c = this.cfg, f = this.f();
+    if(this.phase !== 'won') this.t += dt;
+    // 定时事件：尸潮、精英怪
+    while(this.phase === 'fight' && this.ev < c.events.length && this.t >= c.events[this.ev].t) this.event(c.events[this.ev++]);
+    // 尸潮分批刷出
+    if(this.burst.length){ this.burstT -= dt; if(this.burstT <= 0){ this.burstT = 0.07; if(Zombies.list.length < MAX_Z - 2) this.spawn(this.burst.pop()); else this.burst.length = 0; } }
+    // 离战车太远的僵尸挪回前后的路上（不让它们掉队，保持一直有怪）
+    this.recycleT -= dt;
+    if(this.recycleT <= 0){
+      this.recycleT = 0.5;
+      for(const z of Zombies.list){
+        if(z.type === 'boss' || z.elite || z.rise < 1 || z.dead) continue;
+        if(Math.abs(z.pos.z - Car.pos.z) > 62){ const p = this.spawnPos(z.type); if(p){ z.pos.set(p.x, -1.9*z.s, p.z); z.rise = 0; z.kb.set(0, 0, 0); } }
+      }
+    }
+    if(this.killAll){
+      this.killAll = false;
+      for(const o of Zombies.list.slice()) if(!o.dead) Zombies.damage(o, 1e9, new V3(0, 1, 0), 3, false, o.pos, true);
+      Gems.collectAll();
+    }
+    if(this.phase === 'fight'){
+      if(this.t >= c.dur){ this.startBoss(); return; }
+      const cap = Math.min(MAX_Z - 6, Math.round(lerp(c.cap[0], c.cap[1], f))), rate = lerp(c.rate[0], c.rate[1], Math.pow(f, 1.1));
+      this.spawnT -= dt;
+      while(this.spawnT <= 0){ this.spawnT += rand(0.6, 1.4)/rate; if(Zombies.list.length < cap) this.spawn(this.pick(c.mix(f))); }
+    } else if(this.phase === 'boss'){
+      this.spawnT -= dt;
+      if(this.spawnT <= 0){ this.spawnT = 1.4; if(Zombies.list.length < 18) this.spawn(this.pick(c.mix(1))); }
+    } else if(this.phase === 'won'){
+      this.wonT -= dt; if(this.wonT <= 0){ Game.victory(); return; }
+    }
+    // 攒下的升级：一个一个选
+    if(this.pend > 0 && this.phase !== 'won' && !Car.dead) Game.showUpgrade();
+  },
+  event(e){
+    if(e.k === 'horde'){
+      HUD.announce(T('尸潮来袭！', 'HORDE!'), '', '#ff5a3a'); Sfx.horn(); vibrate([40, 60, 40]); Cam.trauma(0.2);
+      for(let i=0;i<e.n;i++) this.burst.push(e.type && Math.random() < 0.75 ? e.type : this.pick(this.cfg.mix(this.f())));
+      this.burstT = 0.5;
+    } else if(e.k === 'elite'){
+      const z = this.spawn('brute', this.hpMul()*6);
+      if(z){ z.s *= 1.3; z.r = 0.36*z.s; z.elite = true; z.speed *= 1.25; HUD.toast(T('精英僵尸', 'Elite zombie'), 2.5); Sfx.roar(); }
+    }
+  },
+  startBoss(){
+    this.phase = 'boss'; this.spawnT = 4; this.burst.length = 0;
+    HUD.announce(T('BOSS 来袭！', 'BOSS INCOMING!'), '', '#ff3a2a'); Sfx.horn(); vibrate([60, 40, 60, 40, 120]); Cam.trauma(0.45);
+    if(this.spawn('boss', this.cfg.bossHp)) Sfx.roar();
+    for(const t of this.cfg.escorts) this.spawn(t);
+  },
+  onKill(z){
+    const v = z.elite ? 15 : ({ normal:1, runner:1, exploder:2, spitter:2, brute:4 })[z.type] || 0;
+    if(v) Gems.spawn(z.pos.x, z.pos.z, v);
+    if(z.elite) Pickups.spawn(z.pos.x + 1.5, z.pos.z);
+    if(z.type === 'boss' && this.phase === 'boss'){ this.phase = 'won'; this.wonT = 3.2; this.killAll = true; Game.score += 5000; }
+  },
+  addXp(v){ this.xp += v; while(this.xp >= this.need){ this.xp -= this.need; this.lv++; this.need = this.needFor(this.lv); this.pend++; } },
+};
+
+// 经验块：发光的小方块，靠近会被吸过来
+const Gems = {
+  MAX:420, list:[], sfxT:0,
+  mesh:(() => { const m = new THREE.InstancedMesh(boxGeo, new THREE.MeshBasicMaterial({ color:0xffffff }), 420); m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled = false; m.count = 0; scene.add(m); return m; })(),
+  _m:new THREE.Matrix4(), _q:new THREE.Quaternion(), _e:new THREE.Euler(), _p:new V3(), _s:new V3(), _c:new THREE.Color(),
+  spawn(x, z, v){
+    if(this.list.length >= this.MAX){ this.list[(Math.random()*this.list.length)|0].v += v; return; }
+    this.list.push({ x:x + rand(-0.5, 0.5), z:z + rand(-0.5, 0.5), y:0.6, vy:rand(3, 5), v, t:Math.random()*6, fly:0 });
+  },
+  color(v){ return v >= 10 ? 0xffc93c : v >= 4 ? 0xd28bff : v >= 2 ? 0x5aff8a : 0x4ad8ff; },
+  update(dt){
+    const P = Car.pos, R = 5.5*Up.magnet, L = this.list;
+    let got = 0; this.sfxT -= dt;
+    for(let i=L.length-1;i>=0;i--){
+      const g = L[i]; g.t += dt;
+      if(g.vy){ g.y += g.vy*dt; g.vy -= 16*dt; if(g.y <= 0.45){ g.y = 0.45; g.vy = 0; } }
+      if(Car.dead) continue;
+      const dx = P.x - g.x, dz = P.z - g.z, d = Math.hypot(dx, dz) || 0.001;
+      if(g.fly || d < R){ g.fly = Math.min(45, (g.fly || 7) + dt*45); const s = Math.min(d, g.fly*dt); g.x += dx/d*s; g.z += dz/d*s; }
+      if(d < CAR_R + 0.8){ Level.addXp(g.v); got++; L[i] = L[L.length - 1]; L.pop(); }
+    }
+    if(got && this.sfxT <= 0){ this.sfxT = 0.05; Sfx.gem(); }
+    let n = 0;
+    for(const g of L){
+      const sz = g.v >= 10 ? 0.75 : g.v >= 4 ? 0.55 : g.v >= 2 ? 0.42 : 0.32;
+      this._q.setFromEuler(this._e.set(0.6, g.t*2.5, 0.6)); this._p.set(g.x, g.y + Math.sin(g.t*4)*0.12, g.z); this._s.setScalar(sz);
+      this._m.compose(this._p, this._q, this._s); this.mesh.setMatrixAt(n, this._m); this._c.setHex(this.color(g.v)); this.mesh.setColorAt(n, this._c); n++;
+    }
+    this.mesh.count = n; this.mesh.instanceMatrix.needsUpdate = true; if(this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+  },
+  collectAll(){ for(const g of this.list) g.fly = 30; },
+  clear(){ this.list.length = 0; this.mesh.count = 0; },
 };
 
 /* =====================================================================
@@ -1988,7 +2312,12 @@ const HUD = {
     $('heart').classList.toggle('low', hp < 0.3);
     // 波次 + 剩余僵尸条
     const rb = $('remBar');
-    if(Waves.phase === 'combat'){
+    rb.classList.toggle('xp', Level.on);
+    if(Level.on){
+      this.set('waveTxt', Level.phase === 'fight' ? fmtT(Level.cfg.dur - Level.t) : Level.phase === 'boss' ? 'BOSS' : T('通关', 'CLEAR'));
+      rb.style.display = ''; this.bar(rb.firstChild, 'rem', Level.xp/Level.need);
+      this.set('subTxt', 'Lv ' + Level.lv);
+    } else if(Waves.phase === 'combat'){
       const rem = Waves.remaining();
       this.set('waveTxt', T('第 ' + Waves.n + ' 波', 'Wave ' + Waves.n));
       rb.style.display = ''; this.bar(rb.firstChild, 'rem', rem/Math.max(1, Waves.total));
@@ -2082,23 +2411,26 @@ const Game = {
     this.state = s;
     document.body.classList.toggle('playing', s === 'play' || s === 'pause' || s === 'upgrade' || s === 'over');
   },
-  showOv(id){ for(const o of ['menu', 'settings', 'pause', 'upgrade', 'over']) $(o).classList.toggle('show', o === id); },
+  showOv(id){ for(const o of ['menu', 'levels', 'settings', 'pause', 'upgrade', 'over']) $(o).classList.toggle('show', o === id); },
   menuScene(){
     Zombies.reset();
     const types = ['normal', 'runner', 'brute', 'exploder', 'spitter', 'normal'];
     types.forEach((t, i) => { const a = -0.9 + i*0.36, r = 9 + (i % 2)*2.5; Zombies.spawn(t, Car.pos.x + Math.sin(a)*r, Car.pos.z - Math.cos(a)*r, 1, true); });
   },
-  start(){
+  start(opts){
+    if(opts) this.cur = opts;
+    const cur = this.cur || { mode:'endless' }, lv = cur.mode === 'level' ? LEVELS.find(l => l.id === cur.id) : null;
+    World.build(lv ? lv.map : 'town'); Level.reset(lv); Gems.clear();
     Sfx.init(); if(S.gyro) Gyro.request(); Gyro.reset();
     if(IS_TOUCH && !IS_APP){ try { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if(r) r.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch(e){} }
-    Object.assign(Up, { dmgMul:1, rateMul:1, heatMul:1, barrels:1, pierce:0, ramMul:1, ramArmor:false, speedMul:1, boomEvery:0, leech:0, headMul:2, lv:{} });
+    Object.assign(Up, { magnet:1, dmgMul:1, rateMul:1, heatMul:1, barrels:1, pierce:0, ramMul:1, ramArmor:false, speedMul:1, boomEvery:0, leech:0, headMul:2, lv:{} });
     Car.reset(); Gun.reset(); Zombies.reset(); Waves.reset(); PL.clear(); PG.clear(); Acid.clear(); Blasts.clear(); Pickups.clear(); Tracers.clear(); BossLane.hide();
     this.score = 0; this.kills = 0; this.timeScale = 1; this.t = 0;
     $('dmgDirs').innerHTML = '';
     this.showOv(null); this.setState('play');
     if(!IS_TOUCH) lockPointer();
     releaseTouches();
-    HUD.announce(T('准备战斗', 'GET READY'), IS_TOUCH ? '' : T('鼠标瞄准 · WASD 移动 · 左键开火', 'Mouse aim · WASD drive · Click fire'), '#ffd28a');
+    if(lv) HUD.announce(T(lv.name[0], lv.name[1]), fmtT(lv.dur), '#ffd28a'); else HUD.announce(T('准备战斗', 'GET READY'), IS_TOUCH ? '' : T('鼠标瞄准 · WASD 移动 · 左键开火', 'Mouse aim · WASD drive · Click fire'), '#ffd28a');
     if(IS_TOUCH && S.gyro) setTimeout(() => { if(!Gyro.has && Game.state === 'play') HUD.toast(T('没有陀螺仪', 'No gyroscope'), 3); }, 1500);
   },
   pause(){
@@ -2111,6 +2443,7 @@ const Game = {
   },
   quit(){
     this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock();
+    World.build('town'); Level.reset(null); Gems.clear();
     Car.reset(); Car.sync(); Waves.reset(); Acid.clear(); Pickups.clear(); Tracers.clear(); Blasts.clear(); this.menuScene();
     this.setState('menu'); this.showOv('menu'); Sfx.engine(0, false); refreshMenu();
   },
@@ -2120,14 +2453,15 @@ const Game = {
     this.kills++; this.score += pts; HUD.pop('+' + pts, head ? '#ffd23a' : '#ffffff');
     vibrate(head ? 32 : z.cfg.heavy ? 40 : 20); Cam.trauma(head ? 0.1 : 0.06);
     if(Up.leech) Car.heal(Up.leech);
-    const drop = z.type === 'boss' ? 1 : z.type === 'brute' ? 0.25 : 0.035;
+    if(Level.on) Level.onKill(z);
+    const drop = z.type === 'boss' ? 1 : z.type === 'brute' ? (Level.on ? 0.12 : 0.25) : (Level.on ? 0.012 : 0.035);
     if(Math.random() < drop) Pickups.spawn(z.pos.x, z.pos.z);
     if(z.type === 'boss'){ HUD.announce(T('BOSS 已击败！', 'BOSS DEFEATED!'), '+' + z.cfg.score + T(' 分', ' pts'), '#ffd25a'); Cam.trauma(0.6); vibrate([60, 30, 60]); }
   },
   showUpgrade(){
     this.setState('upgrade'); Input.firing = false; releaseTouches(); Sfx.engine(0, false);
     this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock(); else this.unlockOk = false;
-    $('upTitle').textContent = T('第 ' + Waves.n + ' 波完成', 'Wave ' + Waves.n + ' complete');
+    $('upTitle').textContent = Level.on ? T('升级！', 'LEVEL UP!') + ' Lv ' + (Level.lv - Level.pend + 1) : T('第 ' + Waves.n + ' 波完成', 'Wave ' + Waves.n + ' complete');
     const box = $('cards'); box.innerHTML = '';
     upgradeChoices().forEach((u, i) => {
       const lv = Up.lv[u.id] || 0, c = document.createElement('div'); c.className = 'card'; c.style.animationDelay = (i*0.09) + 's';
@@ -2135,7 +2469,9 @@ const Game = {
       if(u.max < 99){ for(let k=0;k<u.max;k++) pips += `<i class="${k < lv ? 'on' : k === lv ? 'new' : ''}"></i>`; pips = `<div class="pips">${pips}</div>`; }
       else pips = '<div class="lv">' + T('可重复', 'Repeatable') + '</div>';
       c.innerHTML = `<div class="card-in"><div class="ic" style="--ic:${ICON[u.id] ? ICON[u.id][2] : '#555'}">${ICON[u.id] ? ico(u.id, 30) : u.ic}</div><div class="nm">${T(u.nm, UP_EN[u.id][0])}</div><div class="ds">${T(u.ds, UP_EN[u.id][1])}</div>${pips}</div><b class="plate">${i + 1}</b>`;
-      c.onclick = () => { Sfx.click(); Up.lv[u.id] = lv + 1; u.f(); this.showOv(null); this.setState('play'); Waves.phase = 'wait'; Waves.t = 3; Gyro.reset(); if(!IS_TOUCH) lockPointer(); };
+      c.onclick = () => { Sfx.click(); Up.lv[u.id] = lv + 1; u.f();
+        if(Level.on){ Level.pend--; if(Level.pend > 0){ this.showUpgrade(); return; } this.showOv(null); this.setState('play'); Gyro.reset(); if(!IS_TOUCH) lockPointer(); return; }
+        this.showOv(null); this.setState('play'); Waves.phase = 'wait'; Waves.t = 3; Gyro.reset(); if(!IS_TOUCH) lockPointer(); };
       box.appendChild(c);
     });
     this.showOv('upgrade');
@@ -2144,23 +2480,64 @@ const Game = {
     this.setState('over'); Sfx.engine(0, false);
     this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock(); else this.unlockOk = false;
     const best = getBest(), nb = this.score > best; if(nb) setBest(this.score);
+    const st2 = Level.on ? [T('坚持', 'Survived'), fmtT(Level.t)] : [T('坚持到', 'Reached'), T('第 ' + Waves.n + ' 波', 'Wave ' + Waves.n)];
+    const st4 = Level.on ? [T('等级', 'Level'), 'Lv ' + Level.lv] : [T('最高分', 'Best'), Math.max(best, this.score)];
+    this.result(T('战斗结束', 'GAME OVER'), T('战车被摧毁', 'Rig destroyed'), false, nb, [st2, [T('击杀', 'Kills'), this.kills], st4], null);
+  },
+  // 结算面板（失败 / 通关共用）
+  result(status, title, win, nb, stats, nextId){
+    $('resStatus').textContent = status; $('resStatus').classList.toggle('win', win); $('resTitle').textContent = title;
     $('stats').innerHTML = `<div class="stat main"><span>${T('得分', 'Score')}<em id="newBest">${T('新纪录！', 'NEW BEST!')}</em></span><b>${this.score}</b></div>` +
-      `<div class="stat"><span>${T('坚持到', 'Reached')}</span><b>${T('第 ' + Waves.n + ' 波', 'Wave ' + Waves.n)}</b></div>` +
-      `<div class="stat"><span>${T('击杀', 'Kills')}</span><b>${this.kills}</b></div>` +
-      `<div class="stat"><span>${T('最高分', 'Best')}</span><b>${Math.max(best, this.score)}</b></div>`;
+      stats.map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
     $('newBest').style.display = nb && this.score > 0 ? 'inline-block' : 'none';
+    this.nextId = nextId; $('oNext').style.display = nextId ? '' : 'none';
+    $('oAgain').classList.toggle('primary', !nextId); $('oAgain').classList.toggle('secondary', !!nextId);
     this.showOv('over');
+  },
+  victory(){
+    this.setState('over'); Sfx.engine(0, false); Sfx.pickup(); vibrate([40, 40, 40, 40, 120]);
+    this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock(); else this.unlockOk = false;
+    const L = Level.cfg, i = LEVELS.indexOf(L), next = LEVELS[i + 1];
+    setCleared(L.id);
+    const best = getBest(), nb = this.score > best; if(nb) setBest(this.score);
+    this.result(T('通关', 'CLEARED'), T(L.name[0] + ' 通关！', L.name[1] + ' cleared!'), true, nb,
+      [[T('用时', 'Time'), fmtT(Level.t)], [T('击杀', 'Kills'), this.kills], [T('等级', 'Level'), 'Lv ' + Level.lv]], next ? next.id : null);
   },
   step(dt){
     this.t += dt;
     Gyro.step(dt); Assist.step(dt); Input.applyLook();
     Car.update(dt); Gun.update(dt);
     Zombies.update(dt); Acid.update(dt); Blasts.update(dt); Pickups.update(dt);
-    if(!Car.dead) Waves.update(dt);
+    if(!Car.dead){ if(Level.on) Level.update(dt); else Waves.update(dt); }
+    if(Level.on) Gems.update(dt);
     if(Car.dead){ Car.deadT += dt/this.timeScale; if(Car.deadT > 2.2) this.gameOver(); }
     Sfx.engine(Math.hypot(Car.vel.x, Car.vel.z), !Car.dead);
   },
 };
+const ART = {
+  street:'<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><rect width="160" height="100" fill="#9fb8d8"/><rect y="62" width="160" height="38" fill="#4a4846"/>' +
+    '<path d="M0 12h24v68H0zM26 30h20v50H26zM114 26h20v54h-20zM136 8h24v72h-24z" fill="#9a6a52"/><path d="M48 46h14v34H48zM98 42h14v38H98z" fill="#a8a49a"/>' +
+    '<path d="M60 100L76 56h8l16 44z" fill="#565452"/><path d="M79 60h2v6h-2zM78.5 72h3v8h-3zM78 88h4v12h-4z" fill="#e8e4da"/>' +
+    '<path d="M4 20h6v6H4zM14 20h6v6h-6zM4 34h6v6H4zM140 16h6v6h-6zM150 30h6v6h-6zM118 34h6v6h-6z" fill="#2c3640"/><path d="M14 34h6v6h-6zM150 16h6v6h-6z" fill="#ffe39a"/></svg>',
+  bridge:'<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><rect width="160" height="100" fill="#9fb8d8"/><rect y="58" width="160" height="42" fill="#3a6a88"/>' +
+    '<path d="M0 64h160v7H0z" fill="#948e84"/><path d="M36 10h6v64h-6zM118 10h6v64h-6z" fill="#a89a86"/><path d="M36 14h88v4H36z" fill="#a89a86"/>' +
+    '<path d="M0 44Q20 64 39 14Q80 62 121 14Q140 64 160 44" stroke="#4a5058" stroke-width="1.6" fill="none"/>' +
+    '<path d="M54 30v34M66 40v24M78 46v18M90 40v24M102 30v34" stroke="#4a5058" stroke-width=".8"/><path d="M0 80h160v2H0zM20 90h40v1.5H20zM100 88h44v1.5h-44z" fill="#6a9ab8"/></svg>',
+  town:'<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><rect width="160" height="100" fill="#74944a"/><path d="M70 0h20v100H70zM0 42h160v18H0z" fill="#5c5a58"/>' +
+    '<path d="M18 8h32v24H18zM108 68h34v22h-34z" fill="#a65a3e"/><path d="M108 10h30v22h-30z" fill="#a49a8c"/><path d="M22 70h10v10H22zM40 76h10v10H40zM144 14h10v10h-10z" fill="#4a8a34"/>' +
+    '<path d="M79 4h2v8h-2zM79 22h2v8h-2zM79 70h2v8h-2zM79 88h2v8h-2zM10 50h8v2h-8zM28 50h8v2h-8zM124 50h8v2h-8zM142 50h8v2h-8z" fill="#d8b64a"/></svg>',
+};
+function renderLevels(){
+  const box = $('levelList'), cl = getCleared(); box.innerHTML = '';
+  const items = LEVELS.map((l, i) => ({ plate:String(i + 1).padStart(2, '0'), name:T(l.name[0], l.name[1]), ok:!!cl[l.id], art:ART[l.map],
+      meta:cl[l.id] ? T('✓ 已通关', '✓ Cleared') : fmtT(l.dur) + ' · BOSS', go:() => Game.start({ mode:'level', id:l.id }) }))
+    .concat([{ plate:'∞', name:T('无尽模式', 'Endless'), ok:false, art:ART.town, meta:T('最高分 ', 'Best ') + getBest(), go:() => Game.start({ mode:'endless' }) }]);
+  items.forEach((it, i) => {
+    const c = document.createElement('div'); c.className = 'map-card'; c.style.animationDelay = (i*0.05) + 's';
+    c.innerHTML = `<div class="map-in"><div class="map-art">${it.art}</div><div class="map-info"><h3>${it.name}</h3><span class="${it.ok ? 'ok' : ''}">${it.meta}</span></div></div><b class="plate">${it.plate}</b>`;
+    btn(c, it.go); box.appendChild(c);
+  });
+}
 function refreshMenu(){
   const b = getBest(); $('bestTxt').innerHTML = b ? T('最高分 ', 'Best ') + '<b class="num">' + b + '</b>' : '';
 }
@@ -2214,7 +2591,9 @@ document.addEventListener('visibilitychange', () => { if(document.hidden){ Game.
    ===================================================================== */
 const btn = (id, fn) => (typeof id === 'string' ? $(id) : id).addEventListener('click', e => { e.stopPropagation(); Sfx.init(); Sfx.click(); fn(); });
 let settingsBack = 'menu';
-btn('bStart', () => Game.start());
+btn('bStart', () => { renderLevels(); Game.showOv('levels'); });
+btn('lBack', () => Game.showOv('menu'));
+btn('oNext', () => Game.start({ mode:'level', id:Game.nextId }));
 btn('bSet', () => { settingsBack = 'menu'; openSettings(); });
 btn('pResume', () => Game.resume());
 btn('pSet', () => { settingsBack = 'pause'; openSettings(); });
@@ -2250,7 +2629,7 @@ function applyLang(){
   document.documentElement.lang = en ? 'en' : 'zh-CN';
   document.title = en ? 'Firepower Rig · 火力战车' : '火力战车 · Firepower Rig';
   for(const e of document.querySelectorAll('[data-en]')){ if(e.dataset.zh === undefined) e.dataset.zh = e.textContent; e.textContent = en ? e.dataset.en : e.dataset.zh; }
-  $('pauseBtn').setAttribute('aria-label', T('暂停', 'Pause')); $('sBack').setAttribute('aria-label', T('返回', 'Back')); $('calBtn').setAttribute('aria-label', T('校准', 'Recalibrate'));
+  $('pauseBtn').setAttribute('aria-label', T('暂停', 'Pause')); $('lBack').setAttribute('aria-label', T('返回', 'Back')); if($('levels').classList.contains('show')) renderLevels(); $('sBack').setAttribute('aria-label', T('返回', 'Back')); $('calBtn').setAttribute('aria-label', T('校准', 'Recalibrate'));
   $('logoMain').textContent = T('火力战车', 'FIREPOWER RIG'); $('logoSub').textContent = T('FIREPOWER RIG', '火力战车');
   $('bLang').textContent = en ? '中文' : 'English';
   for(const b of $('sLang').children) b.classList.toggle('on', b.dataset.l === S.lang);
@@ -2269,7 +2648,7 @@ FireRing.build(); applyGyroUI();
 Car.reset(); Car.sync(); Game.menuScene(); applyLang(); applyQuality();
 $('loading').remove();
 requestAnimationFrame(frame);
-window.FP = { renderer, scene, camera, carG, gunScene, gunCam, Game, Car, Gun, Zombies, Waves, Input, Up, Gyro, Assist, Touch, HUD, World, S, tick(sec, fn){ for(let i=0;i<sec*60;i++){ if(fn) fn(i/60); advance(1/60); } } };   // 调试用
+window.FP = { Level, Gems, LEVELS, renderer, scene, camera, carG, gunScene, gunCam, Game, Car, Gun, Zombies, Waves, Input, Up, Gyro, Assist, Touch, HUD, World, S, tick(sec, fn){ for(let i=0;i<sec*60;i++){ if(fn) fn(i/60); advance(1/60); } } };   // 调试用
 </script>
 </body>
 </html>

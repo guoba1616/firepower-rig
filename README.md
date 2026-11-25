@@ -12,6 +12,12 @@
   手机打开后横过来玩，手指滑屏幕就能瞄准。
 - **安卓 APK：** 到 [Releases](https://github.com/guoba1616/firepower-rig/releases/latest) 下载 `firepower-rig.apk`，安装时如果提示"未知来源"，允许安装即可。
 
+## 关卡
+
+- **01 街道**、**02 大桥**：都是一条长直路。坚持 5 分钟，越往后怪越多，中间有尸潮和精英怪；时间到了 Boss 出场，打死 Boss 就通关。
+- 杀怪会掉发光的经验块，开车过去吸走；经验条满了就暂停，三选一强化。
+- **无尽模式**：原来的小镇，一波一波打下去。
+
 ## 怎么玩
 
 | | 手机 (APK) | 电脑 (网页) |
@@ -66,7 +72,8 @@ A first-person minigun rig vs. blocky zombies (zombie models, colors and stats f
 | Fire | Bottom-right button (hold) | Left mouse button (hold) |
 | Pause | ❚❚ top right | Esc |
 
-- After each wave, pick one of three upgrades.
+- Levels **01 Street** and **02 Bridge** are long straight roads: survive 5 minutes of growing hordes, then kill the boss to clear the level. Kills drop XP gems; fill the bar to pick one of three upgrades.
+- **Endless** mode is the original town: after each wave, pick one of three upgrades.
 - The minigun overheats if you hold fire too long; it only cools while you're not firing.
 - Ramming zombies hurts them too. Every 5th wave brings the Butcher boss: get out of the red lane when it charges.
 
