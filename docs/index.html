@@ -770,34 +770,138 @@ const FX = {
    6. 战车（玩家）：方块车身、车轮、撞角、炮塔圈
    ===================================================================== */
 const carG = new THREE.Group(); scene.add(carG);
-// 枪械场景用单独的材质（灯光配置与主场景不同，共用材质会让着色器反复切换）
-const matCacheG = {};
-const lamG = color => matCacheG[color] || (matCacheG[color] = new THREE.MeshLambertMaterial({ color, map:BLOCK_TEX }));
-let BX_MAT = lam;
-function bx(parent, w, h, d, x, y, z, color, glow){
-  const m = new THREE.Mesh(boxGeo, glow ? new THREE.MeshBasicMaterial({ color }) : BX_MAT(color));
-  m.scale.set(w, h, d); m.position.set(x, y, z); m.castShadow = !glow; m.receiveShadow = true; parent.add(m); return m;
+/* ---- 合并建模：很多方块/圆柱合成一个网格（顶点色），手机上也只多几个 draw call ---- */
+const MGEO = { box:new THREE.BoxGeometry(1, 1, 1).toNonIndexed() };
+const cylG = (seg, top=1) => MGEO['c' + seg + '_' + top] || (MGEO['c' + seg + '_' + top] = new THREE.CylinderGeometry(0.5*top, 0.5, 1, seg).toNonIndexed());
+function Merge(){
+  const pos = [], nor = [], uv = [], col = [], m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), c = new THREE.Color(), v = new V3(), s = new V3();
+  const AX = { x:[0, 0, -Math.PI/2], y:[0, 0, 0], z:[Math.PI/2, 0, 0] };
+  const api = {
+    add(geo, color, x, y, z, sx, sy, sz, rx=0, ry=0, rz=0){
+      const g = geo.clone(); m.compose(v.set(x, y, z), q.setFromEuler(e.set(rx, ry, rz)), s.set(sx, sy, sz)); g.applyMatrix4(m);
+      c.set(color); const n = g.attributes.position.count;
+      for(let i=0;i<n*3;i++){ pos.push(g.attributes.position.array[i]); nor.push(g.attributes.normal.array[i]); }
+      for(let i=0;i<n*2;i++) uv.push(g.attributes.uv.array[i]);
+      for(let i=0;i<n;i++) col.push(c.r, c.g, c.b);
+      g.dispose(); return api;
+    },
+    box(w, h, d, x, y, z, color, rx, ry, rz){ return api.add(MGEO.box, color, x, y, z, w, h, d, rx, ry, rz); },
+    // 圆柱（axis：沿哪个轴）；top<1 就是锥台，top=0 是尖锥
+    cyl(r, len, x, y, z, color, axis='y', seg=10, top=1){ const a = AX[axis]; return api.add(cylG(seg, top), color, x, y, z, r*2, len, r*2, a[0], a[1], a[2]); },
+    mesh(mat, shadow=true){
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+      g.computeBoundingSphere();
+      const me = new THREE.Mesh(g, mat); me.castShadow = shadow; me.receiveShadow = shadow; return me;
+    },
+  };
+  return api;
 }
+const VC_MAT = new THREE.MeshLambertMaterial({ vertexColors:true, map:BLOCK_TEX });
+const VC_GLOW = new THREE.MeshBasicMaterial({ vertexColors:true });
+
+/* ---- 战车：装甲皮卡（驾驶室 + 后斗炮塔），橄榄绿涂装 + 橙色警示条 ---- */
 const carWheels = [];
+let ramSpikes, turretGun;
 {
-  const OL = 0x56632c, OL2 = 0x4a5626, ST = 0x6d7276;
-  bx(carG, 2.2, 0.45, 4.6, 0, 0.72, 0, 0x2b2d2f);
-  bx(carG, 2.34, 0.85, 2.6, 0, 1.36, 0.75, OL);
-  bx(carG, 2.36, 0.14, 2.62, 0, 1.55, 0.75, 0xd9822b);
-  bx(carG, 2.1, 0.95, 1.4, 0, 1.42, -1.15, OL2);
-  bx(carG, 1.8, 0.42, 0.08, 0, 1.6, -1.86, 0x1a2630);
-  bx(carG, 2.0, 0.5, 0.95, 0, 1.08, -2.2, OL);
-  bx(carG, 2.7, 0.72, 0.26, 0, 0.86, -2.78, ST);
-  for(let i=0;i<5;i++) bx(carG, 0.16, 0.16, 0.42, (i - 2)*0.6, 0.9, -3.0, 0x9aa0a6);
-  for(const sx of [-0.72, 0.72]) bx(carG, 0.36, 0.2, 0.06, sx, 1.14, -2.69, 0xfff2b0, true);
-  for(const sx of [-0.8, 0.8]) bx(carG, 0.3, 0.16, 0.06, sx, 1.3, 2.07, 0xff3020, true);
-  for(const sx of [-1, 1]) for(const sz of [-1.5, 1.5]){
-    const w = new THREE.Group(); w.position.set(sx*1.2, 0.5, sz); carG.add(w);
-    bx(w, 0.52, 1.0, 1.0, 0, 0, 0, 0x18191b); bx(w, 0.56, 0.35, 0.35, 0, 0, 0, 0x6a6a6a);
+  const OD = 0x5a6630, OD2 = 0x4b5628, OD3 = 0x6c7a3a, DK = 0x26292b, ST = 0x737a80, ST2 = 0x9aa1a7, RB = 0x1c1d1f,
+        OR = 0xe07a24, YL = 0xe8b62a, BK = 0x1b1c1e, GL = 0x223644, RED = 0x8c2a1e, CR = 0x7d6a3e;
+  const M = Merge(), G = Merge();
+  // 底盘、车桥、侧裙
+  M.box(2.1, 0.4, 4.9, 0, 0.82, 0, DK);
+  for(const z of [-1.55, 1.55]) M.box(2.3, 0.14, 0.14, 0, 0.6, z, DK);
+  for(const sx of [-1, 1]){
+    M.box(0.12, 0.36, 1.5, sx*1.12, 0.95, 0, OD2);
+    M.box(0.34, 0.06, 1.3, sx*1.24, 0.8, 0, ST);                                   // 踏板
+    for(const z of [-0.5, 0, 0.5]) M.box(0.04, 0.05, 0.05, sx*1.185, 1.05, z, ST2); // 铆钉
+  }
+  // 挡泥板（四个轮子上方，前后斜边）
+  for(const sx of [-1, 1]) for(const zw of [-1.55, 1.55]){
+    M.box(0.62, 0.1, 1.3, sx*1.22, 1.3, zw, OD3);
+    M.box(0.62, 0.1, 0.42, sx*1.22, 1.15, zw - 0.8, OD3, -0.75);
+    M.box(0.62, 0.1, 0.42, sx*1.22, 1.15, zw + 0.8, OD3, 0.75);
+    M.box(0.64, 0.04, 1.32, sx*1.22, 1.36, zw, OR);                                 // 橙色边
+  }
+  // 后斗
+  M.box(2.3, 0.14, 2.6, 0, 1.08, 1.0, OD2);
+  for(const sx of [-1, 1]){
+    M.box(0.12, 0.62, 2.6, sx*1.12, 1.44, 1.0, OD);
+    M.box(0.18, 0.08, 2.64, sx*1.12, 1.79, 1.0, OD3);
+    for(const z of [0.1, 0.7, 1.3, 1.9]) M.box(0.14, 0.5, 0.06, sx*1.15, 1.42, z, OD2); // 加强筋
+  }
+  M.box(2.36, 0.62, 0.12, 0, 1.44, 2.3, OD);
+  M.box(2.38, 0.08, 0.14, 0, 1.79, 2.3, OD3);
+  M.box(2.38, 0.1, 0.14, 0, 1.25, 2.3, OR);
+  // 备胎
+  M.cyl(0.42, 0.22, 0, 1.45, 2.47, RB, 'z', 12); M.cyl(0.2, 0.26, 0, 1.45, 2.47, ST, 'z', 8); M.cyl(0.08, 0.3, 0, 1.45, 2.47, OR, 'z', 6);
+  // 后斗里：弹药箱、油桶
+  for(const z of [1.35, 1.85]){ M.box(0.6, 0.38, 0.42, -0.72, 1.34, z, CR); M.box(0.62, 0.06, 0.44, -0.72, 1.45, z, YL); M.box(0.08, 0.06, 0.05, -0.72, 1.36, z - 0.23, ST2); }
+  for(const x of [0.6, 0.86]){ M.box(0.2, 0.48, 0.34, x, 1.39, 1.9, RED); M.box(0.06, 0.06, 0.06, x, 1.66, 1.8, ST); }
+  // 炮塔底座：立柱 + 转盘 + 橙色圈
+  M.cyl(0.32, 0.7, 0, 1.5, 0.6, ST, 'y', 10);
+  M.cyl(0.95, 0.06, 0, 1.84, 0.6, OR, 'y', 16); M.cyl(0.92, 0.18, 0, 1.9, 0.6, OD2, 'y', 16); M.cyl(0.5, 0.04, 0, 2.0, 0.6, DK, 'y', 12);
+  for(let i=0;i<8;i++){ const a = i/8*Math.PI*2; M.box(0.06, 0.05, 0.06, Math.cos(a)*0.8, 2.01, 0.6 + Math.sin(a)*0.8, ST2); }
+  // 防滚架
+  for(const sx of [-1, 1]) M.box(0.1, 0.9, 0.1, sx*1.05, 2.2, 1.6, BK);
+  M.box(2.2, 0.1, 0.1, 0, 2.65, 1.6, BK); M.box(2.2, 0.06, 0.1, 0, 2.3, 1.6, OR);
+  // 驾驶室
+  M.box(2.24, 0.95, 1.55, 0, 1.48, -1.1, OD);
+  M.box(2.26, 0.26, 0.95, 0, 1.72, -1.05, GL);                                      // 侧窗
+  for(const sx of [-1, 1]) for(const z of [-1.4, -1.05, -0.7]) M.box(0.04, 0.3, 0.06, sx*1.135, 1.72, z, OD2); // 窗格栅
+  M.box(1.9, 0.3, 0.06, 0, 1.72, -1.88, GL);                                        // 前挡风（装甲观察缝）
+  for(const x of [-0.6, -0.2, 0.2, 0.6]) M.box(0.06, 0.34, 0.08, x, 1.72, -1.9, OD2);
+  M.box(2.3, 0.08, 1.6, 0, 1.98, -1.1, OD3);                                       // 车顶
+  M.box(2.0, 0.04, 0.06, 0, 2.03, -1.86, OR);
+  for(const sx of [-1, 1]){ M.box(0.05, 0.05, 1.3, sx*1.0, 2.07, -1.05, BK); for(const z of [-1.6, -1.05, -0.5]) M.box(0.06, 0.08, 0.06, sx*1.0, 2.04, z, BK); } // 车顶行李架
+  M.box(0.7, 0.06, 0.6, 0.3, 2.04, -0.95, OD2); M.box(0.6, 0.04, 0.5, 0.3, 2.08, -0.95, OD3); M.box(0.12, 0.06, 0.08, 0.3, 2.1, -1.22, ST2); // 舱盖
+  for(const [x, z] of [[-0.7, -1.55], [-0.7, -1.27], [-0.42, -1.55]]) M.box(0.28, 0.13, 0.26, x, 2.08, z, 0xa8905f); // 沙袋
+  M.box(1.7, 0.12, 0.16, 0, 2.1, -1.74, BK);                                       // 灯架
+  for(const sx of [-1, 1]){ M.box(0.06, 0.24, 0.06, sx*1.2, 1.78, -1.72, BK); M.box(0.12, 0.24, 0.18, sx*1.27, 1.86, -1.72, BK); } // 后视镜
+  M.box(0.03, 1.4, 0.03, -1.0, 2.45, 2.15, BK, 0.25);                               // 天线（在镜头后方，不挡视线）
+  for(const sx of [-1, 1]){ M.cyl(0.08, 0.9, sx*1.2, 1.55, 2.0, ST, 'y', 8); M.cyl(0.09, 0.12, sx*1.2, 2.02, 2.0, BK, 'y', 8); } // 排气管（车尾两侧）
+  // 引擎盖
+  M.box(2.0, 0.5, 1.05, 0, 1.26, -2.37, OD);
+  M.box(1.3, 0.08, 0.8, 0, 1.54, -2.3, OD3);
+  for(const z of [-2.05, -2.2, -2.35, -2.5]) M.box(0.95, 0.04, 0.06, 0, 1.6, z, BK); // 散热格栅
+  for(const sx of [-1, 1]) M.box(0.04, 0.04, 0.9, sx*0.75, 1.53, -2.35, OR);
+  // 车头：格栅、车灯框
+  M.box(1.5, 0.42, 0.06, 0, 1.1, -2.9, BK);
+  for(let i=0;i<7;i++) M.box(0.06, 0.38, 0.05, -0.6 + i*0.2, 1.1, -2.94, ST);
+  for(const sx of [-1, 1]){ M.box(0.4, 0.3, 0.06, sx*0.8, 1.32, -2.9, BK); M.box(0.42, 0.04, 0.08, sx*0.8, 1.42, -2.93, ST2); M.box(0.42, 0.04, 0.08, sx*0.8, 1.24, -2.93, ST2); }
+  // 撞角：后仰的钢板 + 黑黄警示条 + 铆钉
+  M.box(2.7, 0.72, 0.24, 0, 0.88, -3.02, ST, 0.3);
+  M.box(2.5, 0.42, 0.04, 0, 0.88, -3.16, BK, 0.3);
+  for(let i=0;i<8;i++) M.box(0.12, 0.42, 0.045, -1.05 + i*0.3, 0.88, -3.17, YL, 0.3, 0, 0.6);
+  for(const x of [-1.2, 1.2]) for(const y of [0.62, 1.12]) M.box(0.07, 0.07, 0.06, x, y, -3.17 + (y - 0.88)*0.3, ST2);
+  for(const sx of [-1, 1]) M.box(0.16, 0.16, 0.7, sx*0.7, 0.88, -2.7, DK);         // 撞角支架
+  // 发光件：头灯、灯架射灯、尾灯
+  for(const sx of [-1, 1]){ G.box(0.32, 0.16, 0.04, sx*0.8, 1.33, -2.95, 0xfff2b0); G.box(0.28, 0.14, 0.04, sx*0.85, 1.6, 2.37, 0xff3020); }
+  for(const x of [-0.6, -0.2, 0.2, 0.6]) G.box(0.26, 0.08, 0.04, x, 2.1, -1.83, 0xfff6c8);
+  carG.add(M.mesh(VC_MAT), G.mesh(VC_GLOW, false));
+  // 撞角尖刺（升级「钢铁撞角」后出现）
+  const SP = Merge();
+  for(let i=0;i<5;i++){ const x = (i - 2)*0.55; SP.cyl(0.11, 0.42, x, 1.05, -3.3, ST2, 'z', 6, 0); SP.box(0.24, 0.24, 0.08, x, 1.05, -3.12, DK, 0.3); }
+  for(let i=0;i<5;i++){ const x = (i - 2)*0.55 + 0.27; if(Math.abs(x) < 1.3) SP.cyl(0.08, 0.3, x, 0.72, -3.32, ST2, 'z', 6, 0); }
+  ramSpikes = SP.mesh(VC_MAT); ramSpikes.rotation.x = 0; ramSpikes.visible = false; carG.add(ramSpikes);
+  // 炮塔上的转管机枪（第一人称时用叠加的枪械模型，这个只在被摧毁后的俯视镜头里显示）
+  const TG = Merge();
+  TG.cyl(0.1, 0.5, 0, 2.25, 0, 0x3a3f44, 'y', 8); TG.box(0.5, 0.4, 1.1, 0, 2.6, -0.2, 0x3a3f44); TG.box(0.34, 0.34, 0.5, -0.45, 2.55, -0.2, OD);
+  TG.cyl(0.16, 0.25, 0, 2.62, -0.85, 0x3a3f44, 'z', 10);
+  for(let i=0;i<6;i++){ const a = i/6*Math.PI*2; TG.cyl(0.035, 1.6, Math.cos(a)*0.09, 2.62 + Math.sin(a)*0.09, -1.75, DK, 'z', 6); }
+  TG.cyl(0.13, 0.12, 0, 2.62, -2.45, DK, 'z', 10);
+  turretGun = TG.mesh(VC_MAT); turretGun.position.set(0, 0, 0.6); turretGun.visible = false; carG.add(turretGun);
+  // 轮子：粗花纹轮胎 + 钢圈 + 橙色轮毂（每个轮子一个网格，单独转动）
+  const W = Merge();
+  W.cyl(0.58, 0.5, 0, 0, 0, RB, 'x', 14);
+  for(let i=0;i<14;i++){ const a = i/14*Math.PI*2; W.box(0.54, 0.1, 0.17, 0, Math.sin(a)*0.6, Math.cos(a)*0.6, 0x262729, Math.PI/2 - a); }
+  W.cyl(0.33, 0.54, 0, 0, 0, ST, 'x', 10); W.cyl(0.15, 0.6, 0, 0, 0, OR, 'x', 8);
+  for(let i=0;i<5;i++){ const a = i/5*Math.PI*2; for(const sx of [-1, 1]) W.box(0.04, 0.06, 0.06, sx*0.29, Math.sin(a)*0.23, Math.cos(a)*0.23, ST2); }
+  const wMesh = W.mesh(VC_MAT);
+  for(const sx of [-1, 1]) for(const sz of [-1.55, 1.55]){
+    const w = new THREE.Group(); w.position.set(sx*1.22, 0.58, sz); w.add(wMesh.clone()); carG.add(w);
     carWheels.push(w);
   }
-  const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.95, 0.38, 12), lam(0x3a3f2a));
-  ring.position.set(0, 1.95, 0.6); ring.castShadow = true; carG.add(ring);
 }
 
 /* =====================================================================
@@ -810,28 +914,78 @@ gunScene.add(new THREE.HemisphereLight(0xfff0e0, 0x504030, 0.95));
 const gunFlashLight = new THREE.PointLight(0xffb050, 0, 4, 2); gunScene.add(gunFlashLight);
 const gun = new THREE.Group(); gunScene.add(gun);
 // 枪身绕枪架略微上扬：从画面底部中间伸向准星（按草图）
-const gunPivot = new THREE.Group(); gunPivot.position.set(0, -1.12, -0.3); gunPivot.rotation.x = 0.2; gun.add(gunPivot);
-const barrelSets = [];   // 每组：{ root, spin:转动组, fl/fl2:枪口火焰, muzzle }
+const gunPivot = new THREE.Group(); gunPivot.position.set(0, -1.1, -0.45); gunPivot.rotation.x = 0.17; gunPivot.scale.setScalar(1.3); gun.add(gunPivot);
+const barrelSets = [];   // 每组：{ root, spin:转动组, fl/fl2:枪口火焰 }
+// 枪械场景用单独的材质（灯光配置与主场景不同）
+const VC_MAT_G = new THREE.MeshLambertMaterial({ vertexColors:true, map:BLOCK_TEX });
+// 枪管材质：随热度发红
+const HEAT_MAT = new THREE.MeshLambertMaterial({ color:0x34393e, map:BLOCK_TEX, emissive:0x000000 });
 {
-  BX_MAT = lamG;
-  const GM = 0x3a3f44, OL = 0x56632c, DK = 0x24282c, P = gunPivot;
-  bx(P, 0.7, 0.36, 0.7, 0, -0.3, -0.6, OL);              // 枪架底座（草图中最宽的那块）
-  bx(P, 0.46, 0.34, 1.05, 0, 0, -0.75, GM);              // 机匣
-  bx(P, 0.5, 0.06, 1.08, 0, 0.18, -0.75, DK);
-  bx(P, 0.3, 0.32, 0.5, -0.4, -0.04, -0.75, OL);         // 弹箱
-  bx(P, 0.14, 0.08, 0.36, -0.22, 0.1, -0.78, 0xb08a3a);  // 弹链
-  for(const sx of [-1, 1]){ bx(P, 0.06, 0.06, 0.34, sx*0.18, 0.04, -0.1, DK); bx(P, 0.07, 0.22, 0.07, sx*0.18, -0.08, 0.02, DK); }
-  bx(P, 0.05, 0.14, 0.05, 0, 0.27, -1.2, DK);            // 准星柱
-  BX_MAT = lam;
+  const GM = 0x3a3f44, GM2 = 0x2c3135, DK = 0x1e2125, OL = 0x56632c, OL2 = 0x47522a, ST = 0x7c838a, BR = 0xd4a640, CU = 0xb86a30, OR = 0xe07a24, YL = 0xe8b62a, RB = 0x18191b;
+  const M = Merge();
+  // 机匣
+  M.box(0.44, 0.32, 1.0, 0, 0, -0.78, GM);
+  M.box(0.4, 0.06, 0.92, 0, 0.19, -0.8, GM2);
+  M.box(0.12, 0.04, 0.84, 0, 0.24, -0.82, DK);
+  for(let i=0;i<7;i++) M.box(0.14, 0.03, 0.03, 0, 0.27, -0.45 - i*0.11, GM2);        // 导轨齿
+  for(const sx of [-1, 1]){
+    M.box(0.02, 0.2, 0.72, sx*0.225, -0.01, -0.82, GM2);
+    for(const z of [-0.5, -1.12]) for(const y of [-0.08, 0.06]) M.box(0.03, 0.035, 0.035, sx*0.24, y, z, ST);
+  }
+  M.box(0.06, 0.12, 0.3, 0.237, -0.02, -0.82, OR);                                  // 橙色警示贴
+  M.box(0.48, 0.36, 0.06, 0, 0, -0.27, DK);                                         // 尾板
+  M.box(0.5, 0.06, 0.12, 0, -0.16, -1.24, DK);                                      // 前箍
+  // 右侧电机：带散热片
+  M.cyl(0.11, 0.46, 0.31, -0.02, -0.55, GM2, 'z', 10);
+  for(let i=0;i<6;i++) M.cyl(0.128, 0.025, 0.31, -0.02, -0.38 - i*0.06, DK, 'z', 10);
+  M.cyl(0.075, 0.06, 0.31, -0.02, -0.3, OR, 'z', 8);
+  M.box(0.12, 0.05, 0.3, 0.24, -0.12, -0.6, DK);
+  // 左侧弹药箱 + 弹链
+  M.box(0.32, 0.34, 0.54, -0.5, -0.06, -0.72, OL);
+  M.box(0.34, 0.05, 0.56, -0.5, 0.13, -0.72, OL2);
+  M.box(0.326, 0.05, 0.546, -0.5, -0.14, -0.72, YL);
+  M.box(0.06, 0.09, 0.04, -0.5, 0.04, -1.0, ST);
+  M.box(0.2, 0.04, 0.06, -0.5, 0.18, -0.72, DK);                                    // 提手
+  for(let i=0;i<5;i++){
+    const x = -0.39 + i*0.04, y = 0.17 + Math.sin(i/4*Math.PI)*0.05;
+    M.cyl(0.02, 0.15, x, y, -0.78, BR, 'z', 6); M.cyl(0.02, 0.05, x, y, -0.88, CU, 'z', 6, 0.3); M.box(0.035, 0.03, 0.17, x, y - 0.02, -0.78, DK);
+  }
+  // 握把（双手柄）+ 蝶形扳机
+  for(const sx of [-1, 1]){
+    M.box(0.05, 0.05, 0.24, sx*0.16, 0.06, -0.15, DK);
+    M.cyl(0.04, 0.26, sx*0.16, -0.05, -0.03, RB, 'y', 8);
+    M.box(0.05, 0.05, 0.12, sx*0.16, -0.18, -0.09, DK);
+  }
+  M.box(0.2, 0.08, 0.03, 0, 0.0, -0.13, OR);
+  // 照门 / 准星
+  for(const sx of [-1, 1]) M.box(0.025, 0.07, 0.03, sx*0.04, 0.3, -0.42, DK);
+  M.box(0.035, 0.12, 0.035, 0, 0.31, -1.22, DK); M.box(0.035, 0.03, 0.04, 0, 0.38, -1.22, OR);
+  // 枪架：托架 + 耳轴 + 立柱 + 底座
+  M.box(0.3, 0.1, 0.5, 0, -0.21, -0.8, DK);
+  for(const sx of [-1, 1]) M.box(0.06, 0.28, 0.26, sx*0.27, -0.2, -0.8, OL);
+  M.cyl(0.05, 0.64, 0, -0.12, -0.8, ST, 'x', 8);
+  M.cyl(0.08, 0.5, 0, -0.5, -0.8, GM2, 'y', 8);
+  M.box(0.66, 0.16, 0.66, 0, -0.78, -0.72, OL); M.box(0.68, 0.04, 0.68, 0, -0.69, -0.72, OR);
+  gunPivot.add(M.mesh(VC_MAT_G, false));
 }
-const barrelGeo = new THREE.CylinderGeometry(0.03, 0.03, 1.9, 6); barrelGeo.rotateX(Math.PI/2);
-const ringGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.07, 10); ringGeo.rotateX(Math.PI/2);
 const flashMat = new THREE.MeshBasicMaterial({ map:FLASH_TEX, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false });
+// 一组转管：固定的转子壳 + 转动的 6 根枪管、箍环、枪口
+const BARREL_PARTS = (() => {
+  const H = Merge(), S = Merge(), B = Merge(), GM = 0x3a3f44, DK = 0x1e2125, ST = 0x7c838a, OR = 0xe07a24;
+  H.cyl(0.14, 0.24, 0, 0, -0.06, GM, 'z', 12); H.cyl(0.145, 0.04, 0, 0, -0.17, OR, 'z', 12); H.cyl(0.1, 0.06, 0, 0, 0.08, DK, 'z', 10);
+  S.cyl(0.03, 1.8, 0, 0, -0.95, DK, 'z', 6);
+  for(const z of [-0.62, -1.25]){ S.cyl(0.112, 0.07, 0, 0, z, ST, 'z', 12); S.cyl(0.04, 0.08, 0, 0, z, DK, 'z', 6); }
+  S.cyl(0.118, 0.14, 0, 0, -1.8, DK, 'z', 12); S.cyl(0.1, 0.03, 0, 0, -1.885, GM, 'z', 12);
+  for(let i=0;i<6;i++){
+    const a = i/6*Math.PI*2, x = Math.cos(a)*0.075, y = Math.sin(a)*0.075;
+    B.cyl(0.026, 1.9, x, y, -0.95, 0xffffff, 'z', 8);
+    S.cyl(0.014, 0.02, x, y, -1.905, 0x050505, 'z', 6);                              // 枪口孔
+  }
+  return { housing:H.mesh(VC_MAT_G, false), spin:S.mesh(VC_MAT_G, false), barrels:B.mesh(HEAT_MAT, false) };
+})();
 function makeBarrel(){
   const root = new THREE.Group(), spin = new THREE.Group(); root.add(spin);
-  const bm = lamG(0x2e3236), rm = lamG(0x4a5056);
-  for(let i=0;i<6;i++){ const a = i/6*Math.PI*2, b = new THREE.Mesh(barrelGeo, bm); b.position.set(Math.cos(a)*0.08, Math.sin(a)*0.08, -0.95); spin.add(b); }
-  for(const z of [-0.05, -0.95, -1.85]){ const r = new THREE.Mesh(ringGeo, rm); r.position.z = z; spin.add(r); }
+  root.add(BARREL_PARTS.housing.clone()); spin.add(BARREL_PARTS.spin.clone(), BARREL_PARTS.barrels.clone());
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), flashMat); fl.position.z = -2.1; fl.visible = false; root.add(fl);
   const fl2 = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), flashMat); fl2.rotation.y = Math.PI/2; fl2.position.z = -2.25; fl2.visible = false; root.add(fl2);
   gunPivot.add(root);
@@ -1326,7 +1480,7 @@ const UPGRADES = [
   { id:'repair', ic:'🔧', nm:'紧急维修', ds:'立即回复 60% 生命', max:99, f(){ Car.heal(Car.maxHp*0.6); } },
   { id:'twin',   ic:'🔫', nm:'多联转管', ds:'加装一组枪管：每次射击多打 1 发', max:2, f(){ Up.barrels++; layoutBarrels(Up.barrels); } },
   { id:'pierce', ic:'➶',  nm:'贯穿射击', ds:'子弹可多穿透 1 只僵尸', max:3, f(){ Up.pierce++; } },
-  { id:'ram',    ic:'🦏', nm:'钢铁撞角', ds:'撞击伤害 +60%，撞重型僵尸不再掉血', max:4, f(){ Up.ramMul *= 1.6; Up.ramArmor = true; } },
+  { id:'ram',    ic:'🦏', nm:'钢铁撞角', ds:'撞击伤害 +60%，撞重型僵尸不再掉血', max:4, f(){ Up.ramMul *= 1.6; Up.ramArmor = true; ramSpikes.visible = true; } },
   { id:'engine', ic:'🏎️', nm:'涡轮引擎', ds:'移动速度 +12%', max:4, f(){ Up.speedMul *= 1.12; } },
   { id:'boom',   ic:'🧨', nm:'爆裂弹', ds:'每隔几发会打出一发爆炸弹（范围伤害）', max:3, f(){ Up.boomEvery = [0, 9, 6, 4][Up.lv.boom]; } },
   { id:'leech',  ic:'♻️', nm:'回收系统', ds:'每击杀 1 只僵尸回复 1 生命', max:5, f(){ Up.leech++; } },
@@ -1344,7 +1498,7 @@ function upgradeChoices(){
    ===================================================================== */
 const Car = {
   pos:new V3(), vel:new V3(), yaw:0, pitch:0, body:0, hp:100, maxHp:100, dead:false, deadT:0, hurtT:0, ghost:100,
-  reset(){ this.pos.set(0, 0, 8); this.vel.set(0, 0, 0); this.yaw = 0; this.pitch = 0; this.body = 0; this.maxHp = 100; this.hp = 100; this.ghost = 100; this.dead = false; this.deadT = 0; carG.visible = true; },
+  reset(){ this.pos.set(0, 0, 8); this.vel.set(0, 0, 0); this.yaw = 0; this.pitch = 0; this.body = 0; this.maxHp = 100; this.hp = 100; this.ghost = 100; this.dead = false; this.deadT = 0; carG.visible = true; ramSpikes.visible = !!Up.lv.ram; },
   heal(n){ this.hp = Math.min(this.maxHp, this.hp + n); },
   damage(n, from, acid){
     if(this.dead || Game.state !== 'play') return;
@@ -1401,7 +1555,7 @@ const Car = {
     this.hurtT = Math.max(0, this.hurtT - dt*1.8);
     this.ghost = this.ghost > this.hp ? Math.max(this.hp, this.ghost - dt*40) : this.hp;
   },
-  sync(){ carG.position.copy(this.pos); carG.rotation.y = this.body; },
+  sync(){ carG.position.copy(this.pos); carG.rotation.y = this.body; turretGun.visible = this.dead && this.deadT > 0.4; turretGun.rotation.y = this.yaw - this.body; },
 };
 
 const Gun = {
@@ -1415,6 +1569,8 @@ const Gun = {
     const want = Input.firing && !this.over && !Car.dead;
     this.spin = damp(this.spin, want ? 1 : 0, want ? 8 : 2.5, dt);
     for(let i=0;i<Up.barrels;i++) barrelSets[i].spin.rotation.z += this.spin*dt*34;
+    const hg = clamp((this.heat - 0.3)/0.7, 0, 1)**2, pul = this.over ? 0.15 + Math.sin(Game.t*12)*0.1 : 0;
+    HEAT_MAT.emissive.setRGB(hg*0.85 + pul, hg*0.22 + pul*0.2, hg*0.02);
     if(want && this.fireT <= 0){
       this.fireT = Math.max(this.fireT, -0.05) + 0.085/Up.rateMul;
       this.fire(); this.idleT = 0;
@@ -2001,7 +2157,7 @@ FireRing.build(); applyGyroUI();
 Car.reset(); Car.sync(); Game.menuScene(); applyLang(); applyQuality();
 $('loading').remove();
 requestAnimationFrame(frame);
-window.FP = { Game, Car, Gun, Zombies, Waves, Input, Up, Gyro, Assist, Touch, HUD, World, S, tick(sec, fn){ for(let i=0;i<sec*60;i++){ if(fn) fn(i/60); advance(1/60); } } };   // 调试用
+window.FP = { renderer, scene, camera, carG, gunScene, gunCam, Game, Car, Gun, Zombies, Waves, Input, Up, Gyro, Assist, Touch, HUD, World, S, tick(sec, fn){ for(let i=0;i<sec*60;i++){ if(fn) fn(i/60); advance(1/60); } } };   // 调试用
 </script>
 </body>
 </html>
