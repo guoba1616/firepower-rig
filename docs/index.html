@@ -319,6 +319,8 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
     <div class="set-grid">
       <label class="row tOnly"><span data-en="Swipe sensitivity">滑屏灵敏度</span><input type="range" id="sDragSens" min="0.3" max="3" step="0.1"><output></output></label>
       <label class="row tOnly"><span data-en="Aim assist">瞄准辅助</span><input type="checkbox" id="sAssist"></label>
+      <label class="row"><span data-en="Camera follows driving">镜头跟随方向</span><input type="checkbox" id="sFollow"></label>
+      <label class="row tOnly"><span data-en="Vibration">震动</span><input type="checkbox" id="sVib"></label>
       <label class="row tOnly"><span data-en="Gyro aiming">陀螺仪瞄准</span><input type="checkbox" id="sGyro"></label>
       <label class="row tOnly gyroOnly"><span data-en="Gyro sensitivity">陀螺仪灵敏度</span><input type="range" id="sGyroSens" min="0.5" max="3" step="0.1"><output></output></label>
       <label class="row pOnly"><span data-en="Mouse sensitivity">鼠标灵敏度</span><input type="range" id="sMouseSens" min="0.2" max="3" step="0.1"><output></output></label>
@@ -419,7 +421,7 @@ if(IS_TOUCH) document.body.classList.add('touch');
 /* =====================================================================
    1. 设置（localStorage）
    ===================================================================== */
-const S = { v:2, gyro:false, gyroSens:1.5, dragSens:1.0, assist:true, mouseSens:1.0, vol:0.8, hq:!IS_TOUCH, lang:/^zh/i.test(navigator.language || '') ? 'zh' : 'en' };
+const S = { v:2, gyro:false, gyroSens:1.5, dragSens:1.0, assist:true, mouseSens:1.0, vol:0.8, hq:!IS_TOUCH, vib:true, follow:IS_TOUCH, lang:/^zh/i.test(navigator.language || '') ? 'zh' : 'en' };
 try {
   const old = JSON.parse(localStorage.getItem('fp_settings') || '{}');
   if(old.v !== 2){ delete old.gyro; delete old.dragSens; old.v = 2; }   // v1 默认陀螺仪；v2 起默认滑屏
@@ -508,7 +510,17 @@ const Sfx = {
   },
 };
 let userTapped = false; addEventListener('pointerdown', e => { if(e.isTrusted) userTapped = true; }, { capture:true });
-const vibrate = ms => { try { if(IS_TOUCH && userTapped && navigator.vibrate) navigator.vibrate(ms); } catch(e){} };
+const Haptic = {
+  until:0,
+  go(p, prio){
+    if(!S.vib || !IS_TOUCH || !userTapped || !navigator.vibrate) return;
+    const now = performance.now();
+    if(prio < 2 && now < this.until) return;
+    try { navigator.vibrate(p); } catch(e){}
+    if(prio >= 2) this.until = now + (Array.isArray(p) ? p.reduce((a, b) => a + b, 0) : p);
+  },
+};
+const vibrate = (p, prio=2) => Haptic.go(p, prio);
 
 /* =====================================================================
    3. 渲染器 / 场景 / 贴图
@@ -1473,6 +1485,7 @@ function explode(p, o){
   boomLight.position.set(p.x, p.y + 1.5, p.z); boomLight.intensity = 4;
   const d = Math.hypot(p.x - Car.pos.x, p.z - Car.pos.z), s = Sfx.spatial(p, 90);
   Sfx.boom(Math.max(0.25, s.vol), s.pan); Cam.trauma(clamp(1.1 - d/25, 0.1, 0.8));
+  if(d < 28) vibrate(Math.round(clamp(100 - d*3.2, 15, 100)));
   for(const z of Zombies.list.slice()){
     if(z.dead || z.rise < 1) continue;
     const dx = z.pos.x - p.x, dz = z.pos.z - p.z, dd = Math.hypot(dx, dz), R = o.radius + z.r;
@@ -1585,7 +1598,7 @@ const Car = {
   damage(n, from, acid){
     if(this.dead || Game.state !== 'play') return;
     this.hp -= n; this.hurtT = 1;
-    HUD.dmgFrom(from); Cam.trauma(0.25 + n/80); Sfx.hurt(); vibrate(acid ? 30 : 45);
+    HUD.dmgFrom(from); Cam.trauma(0.25 + n/80); Sfx.hurt(); vibrate(acid ? 30 : Math.round(clamp(35 + n*2, 40, 110)));
     if(this.hp <= 0){ this.hp = 0; this.die(); }
   },
   die(){
@@ -1603,7 +1616,7 @@ const Car = {
       if(killed || !heavy){ this.vel.x -= nx*rel*0.3; this.vel.z -= nz*rel*0.3; Sfx.thud(0.6); Cam.trauma(0.12); }
       else { this.vel.x -= nx*rel*1.4; this.vel.z -= nz*rel*1.4; Sfx.thud(1); Cam.trauma(0.35); if(!Up.ramArmor) this.damage(Math.round(rel*0.8), z.pos); }
       if(z.cfg.blast && !z.dead) z.fuseT = Math.max(z.fuseT, z.cfg.blast.fuse - 0.05);   // 撞自爆僵尸 → 当场爆
-      vibrate(25);
+      vibrate(z.cfg.heavy ? 45 : 25);
     } else if(rel > 0){ this.vel.x -= nx*rel*0.5; this.vel.z -= nz*rel*0.5; }
   },
   update(dt){
@@ -1631,6 +1644,14 @@ const Car = {
       const vy = Math.atan2(-this.vel.x, -this.vel.z), diff = Math.abs(wrapA(vy - this.body));
       this.body = angleDamp(this.body, diff > 1.9 ? vy + Math.PI : vy, 3.2*Math.min(1, sp/4), dt);
     }
+    // 镜头跟随：推摇杆往哪边开，视角就慢慢转向那边（倒车不转；滑屏瞄准、开火时减弱）
+    if(S.follow && (mv.x || mv.y) && sp > 2){
+      const d = wrapA(Math.atan2(-this.vel.x, -this.vel.z) - this.yaw);
+      if(Math.abs(d) < 2.0){
+        const k = 2.2*Math.min(1, sp/7)*(Input.firing ? 0.35 : 1)*(Touch.swipeT > 0 ? 0.2 : 1);
+        this.yaw += clamp(d*k, -1.4, 1.4)*dt;
+      }
+    }
     const fwd = this.vel.x*bf + this.vel.z*bz;
     for(const w of carWheels) w.rotation.x -= fwd*dt/0.5;
     if(sp > 4 && Math.random() < dt*sp*1.6) FX.dust(new V3(this.pos.x - bf*1.6 + rand(-1, 1), 0.2, this.pos.z - bz*1.6 + rand(-1, 1)), 1, 0x9a8a68, 0.45);
@@ -1657,7 +1678,7 @@ const Gun = {
       this.fireT = Math.max(this.fireT, -0.05) + 0.085/Up.rateMul;
       this.fire(); this.idleT = 0;
       this.heat += 0.021*Up.heatMul;
-      if(this.heat >= 1){ this.heat = 1; this.over = true; Sfx.overheat(); HUD.toast(T('过热', 'Overheated')); }
+      if(this.heat >= 1){ this.heat = 1; this.over = true; Sfx.overheat(); vibrate([40, 40, 40]); HUD.toast(T('过热', 'Overheated')); }
     }
     this.flashT -= dt;
     const show = this.flashT > 0;
@@ -1674,6 +1695,7 @@ const Gun = {
   _o:new V3(), _d:new V3(), _f:new V3(), _ndc:new V3(),
   fire(){
     this.shots++; this.flashT = 0.04; this.kick = 1;
+    if(this.shots % 2 === 0) vibrate(10, 1);
     Cam.recoil += 0.006; Cam.trauma(0.035);
     Sfx.shot();
     const boom = Up.boomEvery && this.shots % Up.boomEvery === 0;
@@ -1887,7 +1909,7 @@ const Waves = {
   },
   start(n){
     this.n = n; this.q = this.build(n); this.total = this.q.length; this.phase = 'combat'; this.spawnT = 0.5; this.hpMul = 1 + 0.11*(n - 1);
-    HUD.announce(T('第 ' + n + ' 波', 'WAVE ' + n), n % 5 === 0 ? 'BOSS' : '', n % 5 === 0 ? '#ff5a3a' : '#ffd28a');
+    vibrate([30, 60, 30]); HUD.announce(T('第 ' + n + ' 波', 'WAVE ' + n), n % 5 === 0 ? 'BOSS' : '', n % 5 === 0 ? '#ff5a3a' : '#ffd28a');
     Sfx.horn();
     if(n > 1) Pickups.randomSpawn();
   },
@@ -2088,6 +2110,7 @@ const Game = {
     if(z.idle) return;
     const pts = Math.round(z.cfg.score*(head ? 1.5 : 1));
     this.kills++; this.score += pts; HUD.pop('+' + pts, head ? '#ffd23a' : '#ffffff');
+    vibrate(head ? 32 : z.cfg.heavy ? 40 : 20); Cam.trauma(head ? 0.1 : 0.06);
     if(Up.leech) Car.heal(Up.leech);
     const drop = z.type === 'boss' ? 1 : z.type === 'brute' ? 0.25 : 0.035;
     if(Math.random() < drop) Pickups.spawn(z.pos.x, z.pos.z);
@@ -2210,7 +2233,7 @@ function openSettings(){
     };
   };
   bind('sGyro', 'gyro'); bind('sGyroSens', 'gyroSens', v => v.toFixed(1)); bind('sDragSens', 'dragSens', v => v.toFixed(1)); bind('sAssist', 'assist');
-  bind('sMouseSens', 'mouseSens', v => v.toFixed(1)); bind('sVol', 'vol', v => Math.round(v*100)); bind('sHq', 'hq');
+  bind('sMouseSens', 'mouseSens', v => v.toFixed(1)); bind('sVol', 'vol', v => Math.round(v*100)); bind('sHq', 'hq'); bind('sFollow', 'follow'); bind('sVib', 'vib');
   Game.showOv('settings');
 }
 
