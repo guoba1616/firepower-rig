@@ -296,7 +296,7 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
   <div id="vig"></div>
   <div id="ann"><div id="annT"></div><div id="annS"></div></div>
   <div id="toast"></div>
-  <div id="clickHint" class="pOnly" data-en="Click to take control">点击画面继续操控</div>
+  <div id="clickHint" class="pOnly" data-en="Click to play">点击继续</div>
   <div id="stick" class="tOnly"><div id="knob"></div></div>
   <div id="fireBtn" class="tOnly"></div>
 </div>
@@ -304,12 +304,10 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
 <div id="menu" class="ov show">
   <div class="menu-content">
     <div class="title"><h1 id="logoMain">火力战车</h1><div class="title-en" id="logoSub"></div></div>
-    <p class="tag" data-en="Drive a minigun rig through a ruined town and survive the blocky zombie waves.">驾驶转管机枪战车，在废墟小镇里撑过一波又一波方块僵尸。</p>
     <div class="menu-actions">
       <button id="bStart" class="btn primary start-button"><span data-en="Play">开始游戏</span><span class="gi" data-ic="next"></span></button>
       <button id="bSet" class="btn secondary"><span class="gi" data-ic="gear"></span><span data-en="Settings">设置</span></button>
     </div>
-    <div class="ctrl" id="ctrlHint"></div>
     <div class="best" id="bestTxt"></div>
   </div>
   <button id="bLang" class="btn"></button>
@@ -321,11 +319,11 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
     <div class="set-grid">
       <label class="row tOnly"><span data-en="Swipe sensitivity">滑屏灵敏度</span><input type="range" id="sDragSens" min="0.3" max="3" step="0.1"><output></output></label>
       <label class="row tOnly"><span data-en="Aim assist">瞄准辅助</span><input type="checkbox" id="sAssist"></label>
-      <label class="row tOnly"><span data-en="Gyro aiming (tilt phone)">陀螺仪瞄准（转动手机）</span><input type="checkbox" id="sGyro"></label>
+      <label class="row tOnly"><span data-en="Gyro aiming">陀螺仪瞄准</span><input type="checkbox" id="sGyro"></label>
       <label class="row tOnly gyroOnly"><span data-en="Gyro sensitivity">陀螺仪灵敏度</span><input type="range" id="sGyroSens" min="0.5" max="3" step="0.1"><output></output></label>
       <label class="row pOnly"><span data-en="Mouse sensitivity">鼠标灵敏度</span><input type="range" id="sMouseSens" min="0.2" max="3" step="0.1"><output></output></label>
       <label class="row"><span data-en="Volume">音量</span><input type="range" id="sVol" min="0" max="1" step="0.05"><output></output></label>
-      <label class="row"><span data-en="High quality (shadows)">高画质（阴影）</span><input type="checkbox" id="sHq"></label>
+      <label class="row"><span data-en="High quality">高画质</span><input type="checkbox" id="sHq"></label>
       <div class="row"><span>语言 · Language</span><span class="seg" id="sLang"><button data-l="zh">中文</button><button data-l="en">English</button></span></div>
     </div>
   </div>
@@ -344,7 +342,6 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
 <div id="upgrade" class="ov dim">
   <div class="panel up-panel">
     <header class="panel-header"><h2 id="upTitle">第 1 波完成</h2></header>
-    <div class="sub" data-en="Choose an upgrade for your rig">选择一项战车强化</div>
     <div class="cards" id="cards"></div>
   </div>
 </div>
@@ -1554,7 +1551,7 @@ const UP_EN = {
   dmg:['AP Cores','Bullet damage +20%'], rate:['Rapid Action','Fire rate +15%'], cool:['Liquid Cooling','Barrel heat-up -25%'],
   armor:['Composite Armor','Max HP +25, heals 25'], repair:['Field Repair','Heal 60% HP now'], twin:['Twin Barrels','Extra barrel set: +1 bullet per shot'],
   pierce:['Piercing Rounds','Bullets pierce 1 more zombie'], ram:['Steel Ram','Ram damage +60%, no damage from ramming heavies'],
-  engine:['Turbo Engine','Move speed +12%'], boom:['Explosive Rounds','Every few shots is explosive (area damage)'],
+  engine:['Turbo Engine','Move speed +12%'], boom:['Explosive Rounds','Every few shots explode'],
   leech:['Salvage System','Heal 1 HP per kill'], head:['Precision Sights','Headshot damage +50%'],
 };
 const UPGRADES = [
@@ -1567,7 +1564,7 @@ const UPGRADES = [
   { id:'pierce', ic:'➶',  nm:'贯穿射击', ds:'子弹可多穿透 1 只僵尸', max:3, f(){ Up.pierce++; } },
   { id:'ram',    ic:'🦏', nm:'钢铁撞角', ds:'撞击伤害 +60%，撞重型僵尸不再掉血', max:4, f(){ Up.ramMul *= 1.6; Up.ramArmor = true; ramSpikes.visible = true; } },
   { id:'engine', ic:'🏎️', nm:'涡轮引擎', ds:'移动速度 +12%', max:4, f(){ Up.speedMul *= 1.12; } },
-  { id:'boom',   ic:'🧨', nm:'爆裂弹', ds:'每隔几发会打出一发爆炸弹（范围伤害）', max:3, f(){ Up.boomEvery = [0, 9, 6, 4][Up.lv.boom]; } },
+  { id:'boom',   ic:'🧨', nm:'爆裂弹', ds:'每隔几发打出一发爆炸弹', max:3, f(){ Up.boomEvery = [0, 9, 6, 4][Up.lv.boom]; } },
   { id:'leech',  ic:'♻️', nm:'回收系统', ds:'每击杀 1 只僵尸回复 1 生命', max:5, f(){ Up.leech++; } },
   { id:'head',   ic:'🎯', nm:'精准瞄准', ds:'爆头伤害 +50%', max:4, f(){ Up.headMul += 0.5; } },
 ];
@@ -1660,7 +1657,7 @@ const Gun = {
       this.fireT = Math.max(this.fireT, -0.05) + 0.085/Up.rateMul;
       this.fire(); this.idleT = 0;
       this.heat += 0.021*Up.heatMul;
-      if(this.heat >= 1){ this.heat = 1; this.over = true; Sfx.overheat(); HUD.toast(T('枪管过热！等待冷却', 'Overheated! Wait for it to cool')); }
+      if(this.heat >= 1){ this.heat = 1; this.over = true; Sfx.overheat(); HUD.toast(T('过热', 'Overheated')); }
     }
     this.flashT -= dt;
     const show = this.flashT > 0;
@@ -1890,7 +1887,7 @@ const Waves = {
   },
   start(n){
     this.n = n; this.q = this.build(n); this.total = this.q.length; this.phase = 'combat'; this.spawnT = 0.5; this.hpMul = 1 + 0.11*(n - 1);
-    HUD.announce(T('第 ' + n + ' 波', 'WAVE ' + n), n % 5 === 0 ? T('BOSS 来袭！', 'BOSS INCOMING!') : T('消灭所有僵尸', 'Kill all zombies'), n % 5 === 0 ? '#ff5a3a' : '#ffd28a');
+    HUD.announce(T('第 ' + n + ' 波', 'WAVE ' + n), n % 5 === 0 ? 'BOSS' : '', n % 5 === 0 ? '#ff5a3a' : '#ffd28a');
     Sfx.horn();
     if(n > 1) Pickups.randomSpawn();
   },
@@ -1903,7 +1900,7 @@ const Waves = {
       const p = { x, z }; if(World.pushOut(p, 1.2*ZT[type].scale)) continue;
       const hp = type === 'boss' ? 1 + 0.5*(this.n/5 - 1) : this.hpMul;
       const zz = Zombies.spawn(type, x, z, hp);
-      if(zz && !this.seen[type]){ this.seen[type] = true; if(ZINFO[type]) HUD.toast(T('新敌人 · ' + ZNAME[type] + '：' + ZINFO[type], 'New enemy · ' + ZNAME_EN[type] + ': ' + ZINFO_EN[type]), 5); }
+      if(zz && !this.seen[type]){ this.seen[type] = true; if(ZINFO[type]) HUD.toast(T('新敌人 · ' + ZNAME[type], 'New enemy · ' + ZNAME_EN[type]), 2.5); }
       if(zz && type === 'boss'){ Sfx.roar(); Cam.trauma(0.4); }
       return !!zz;
     }
@@ -2071,8 +2068,8 @@ const Game = {
     this.showOv(null); this.setState('play');
     if(!IS_TOUCH) lockPointer();
     releaseTouches();
-    HUD.announce(T('准备战斗', 'GET READY'), IS_TOUCH ? (Gyro.has && S.gyro ? T('转动手机 / 滑动屏幕瞄准 · 左摇杆移动 · 右下开火', 'Tilt / swipe to aim · Left stick to drive · Bottom-right to fire') : T('滑动屏幕瞄准 · 左摇杆移动 · 右下开火', 'Swipe to aim · Left stick to drive · Bottom-right to fire')) : T('鼠标瞄准 · WASD 移动 · 左键开火', 'Mouse to aim · WASD to drive · Left click to fire'), '#ffd28a');
-    if(IS_TOUCH && S.gyro) setTimeout(() => { if(!Gyro.has && Game.state === 'play') HUD.toast(T('没有检测到陀螺仪：请滑动屏幕转动视角', 'No gyroscope found: swipe the screen to aim'), 4); }, 1500);
+    HUD.announce(T('准备战斗', 'GET READY'), IS_TOUCH ? '' : T('鼠标瞄准 · WASD 移动 · 左键开火', 'Mouse aim · WASD drive · Click fire'), '#ffd28a');
+    if(IS_TOUCH && S.gyro) setTimeout(() => { if(!Gyro.has && Game.state === 'play') HUD.toast(T('没有陀螺仪', 'No gyroscope'), 3); }, 1500);
   },
   pause(){
     if(this.state !== 'play') return;
@@ -2105,7 +2102,7 @@ const Game = {
       const lv = Up.lv[u.id] || 0, c = document.createElement('div'); c.className = 'card'; c.style.animationDelay = (i*0.09) + 's';
       let pips = '';
       if(u.max < 99){ for(let k=0;k<u.max;k++) pips += `<i class="${k < lv ? 'on' : k === lv ? 'new' : ''}"></i>`; pips = `<div class="pips">${pips}</div>`; }
-      else pips = '<div class="lv">' + T('可重复选择', 'Can pick again') + '</div>';
+      else pips = '<div class="lv">' + T('可重复', 'Repeatable') + '</div>';
       c.innerHTML = `<div class="card-in"><div class="ic" style="--ic:${ICON[u.id] ? ICON[u.id][2] : '#555'}">${ICON[u.id] ? ico(u.id, 30) : u.ic}</div><div class="nm">${T(u.nm, UP_EN[u.id][0])}</div><div class="ds">${T(u.ds, UP_EN[u.id][1])}</div>${pips}</div><b class="plate">${i + 1}</b>`;
       c.onclick = () => { Sfx.click(); Up.lv[u.id] = lv + 1; u.f(); this.showOv(null); this.setState('play'); Waves.phase = 'wait'; Waves.t = 3; Gyro.reset(); if(!IS_TOUCH) lockPointer(); };
       box.appendChild(c);
@@ -2134,11 +2131,6 @@ const Game = {
   },
 };
 function refreshMenu(){
-  $('ctrlHint').innerHTML = IS_TOUCH
-    ? T('<b>滑动屏幕</b> 瞄准（带轻度瞄准辅助）<br><b>左下摇杆</b> 开车移动　<b>右下按钮</b> 按住开火<br>开车直接撞僵尸也能造成伤害；设置里可开陀螺仪',
-        '<b>Swipe</b> to aim (light aim assist)<br><b>Left stick</b> to drive　<b>Bottom-right button</b> hold to fire<br>Ramming zombies also hurts them. Gyro aiming is in Settings')
-    : T('<b>鼠标</b> 瞄准　<b>WASD</b> 开车移动　<b>左键</b> 按住开火<br><b>Esc</b> 暂停　开车直接撞僵尸也能造成伤害',
-        '<b>Mouse</b> to aim　<b>WASD</b> to drive　<b>Left click</b> hold to fire<br><b>Esc</b> to pause　Ramming zombies also hurts them');
   const b = getBest(); $('bestTxt').innerHTML = b ? T('最高分 ', 'Best ') + '<b class="num">' + b + '</b>' : '';
 }
 
@@ -2201,7 +2193,7 @@ btn('oAgain', () => Game.start());
 btn('oMenu', () => Game.quit());
 btn('sBack', () => { saveS(); Game.showOv(settingsBack); });
 btn('pauseBtn', () => Game.pause());
-btn('calBtn', () => { Car.pitch = 0; Gyro.reset(); HUD.toast(T('视角已校准（水平）', 'View recalibrated (level)')); });
+btn('calBtn', () => { Car.pitch = 0; Gyro.reset(); HUD.toast(T('已校准', 'Calibrated')); });
 function openSettings(){
   const bind = (id, key, fmt=v => v) => {
     const el = $(id), out = el.parentElement.querySelector('output');
