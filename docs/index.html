@@ -319,7 +319,7 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
     <div class="set-grid">
       <label class="row tOnly"><span data-en="Swipe sensitivity">滑屏灵敏度</span><input type="range" id="sDragSens" min="0.3" max="3" step="0.1"><output></output></label>
       <label class="row tOnly"><span data-en="Aim assist">瞄准辅助</span><input type="checkbox" id="sAssist"></label>
-      <label class="row"><span data-en="Camera follows driving">镜头跟随方向</span><input type="checkbox" id="sFollow"></label>
+      <label class="row"><span data-en="Gun turns with rig">枪跟着车转</span><input type="checkbox" id="sFollow"></label>
       <label class="row tOnly"><span data-en="Vibration">震动</span><input type="checkbox" id="sVib"></label>
       <label class="row tOnly"><span data-en="Gyro aiming">陀螺仪瞄准</span><input type="checkbox" id="sGyro"></label>
       <label class="row tOnly gyroOnly"><span data-en="Gyro sensitivity">陀螺仪灵敏度</span><input type="range" id="sGyroSens" min="0.5" max="3" step="0.1"><output></output></label>
@@ -421,10 +421,11 @@ if(IS_TOUCH) document.body.classList.add('touch');
 /* =====================================================================
    1. 设置（localStorage）
    ===================================================================== */
-const S = { v:2, gyro:false, gyroSens:1.5, dragSens:1.0, assist:true, mouseSens:1.0, vol:0.8, hq:!IS_TOUCH, vib:true, follow:IS_TOUCH, lang:/^zh/i.test(navigator.language || '') ? 'zh' : 'en' };
+const S = { v:3, gyro:false, gyroSens:1.5, dragSens:1.0, assist:true, mouseSens:1.0, vol:0.8, hq:!IS_TOUCH, vib:true, follow:true, lang:/^zh/i.test(navigator.language || '') ? 'zh' : 'en' };
 try {
   const old = JSON.parse(localStorage.getItem('fp_settings') || '{}');
-  if(old.v !== 2){ delete old.gyro; delete old.dragSens; old.v = 2; }   // v1 默认陀螺仪；v2 起默认滑屏
+  if(old.v !== 2 && old.v !== 3){ delete old.gyro; delete old.dragSens; old.v = 2; }   // v1 默认陀螺仪；v2 起默认滑屏
+  if(old.v === 2){ delete old.follow; old.v = 3; }   // v3 起默认「枪跟着车转」
   Object.assign(S, old);
 } catch(e){}
 const T = (zh, en) => S.lang === 'en' ? en : zh;   // 双语文本
@@ -1622,9 +1623,22 @@ const Car = {
   update(dt){
     if(this.dead){ this.vel.multiplyScalar(Math.exp(-2*dt)); this.pos.addScaledVector(this.vel, dt); return; }
     const mv = Input.moveVec(), maxS = 11*Up.speedMul;
-    const fx = -Math.sin(this.yaw), fz = -Math.cos(this.yaw), rx = Math.cos(this.yaw), rz = -Math.sin(this.yaw);
-    const tx = (fx*mv.y + rx*mv.x)*maxS, tz = (fz*mv.y + rz*mv.x)*maxS, k = (mv.x || mv.y) ? 2.4 : 1.6;
-    this.vel.x = damp(this.vel.x, tx, k, dt); this.vel.z = damp(this.vel.z, tz, k, dt);
+    this.turnRate = 0;
+    if(S.follow){
+      const bfx = -Math.sin(this.body), bfz = -Math.cos(this.body), fv = this.vel.x*bfx + this.vel.z*bfz;
+      // 方向盘：原地也能慢慢转，车速越快转得越灵（倒车时也是推右往右转，不反向，免得视角乱）
+      const tr = -mv.x*(0.8 + 0.9*Math.min(1, Math.abs(fv)/6));
+      this.body += tr*dt; this.yaw += tr*dt; this.turnRate = tr;
+      const nfx = -Math.sin(this.body), nfz = -Math.cos(this.body), want = mv.y*maxS*(mv.y < 0 ? 0.65 : 1);
+      const k = mv.y ? 2.4 : 1.6, fwd = damp(this.vel.x*nfx + this.vel.z*nfz, want, k, dt);
+      // 侧向抓地：侧滑很快被抵消，像轮子一样
+      const lat = damp(this.vel.x*-nfz + this.vel.z*nfx, 0, 7, dt);
+      this.vel.x = nfx*fwd - nfz*lat; this.vel.z = nfz*fwd + nfx*lat;
+    } else {
+      const fx = -Math.sin(this.yaw), fz = -Math.cos(this.yaw), rx = Math.cos(this.yaw), rz = -Math.sin(this.yaw);
+      const tx = (fx*mv.y + rx*mv.x)*maxS, tz = (fz*mv.y + rz*mv.x)*maxS, k = (mv.x || mv.y) ? 2.4 : 1.6;
+      this.vel.x = damp(this.vel.x, tx, k, dt); this.vel.z = damp(this.vel.z, tz, k, dt);
+    }
     this.pos.addScaledVector(this.vel, dt);
     // 与障碍碰撞（车身前后两个圆）
     const bf = -Math.sin(this.body), bz = -Math.cos(this.body);
@@ -1640,17 +1654,9 @@ const Car = {
     const lim = ARENA - 2.6; this.pos.x = clamp(this.pos.x, -lim, lim); this.pos.z = clamp(this.pos.z, -lim, lim);
     // 车身朝向：朝移动方向；反向时倒车
     const sp = Math.hypot(this.vel.x, this.vel.z);
-    if(sp > 0.6){
+    if(!S.follow && sp > 0.6){
       const vy = Math.atan2(-this.vel.x, -this.vel.z), diff = Math.abs(wrapA(vy - this.body));
       this.body = angleDamp(this.body, diff > 1.9 ? vy + Math.PI : vy, 3.2*Math.min(1, sp/4), dt);
-    }
-    // 镜头跟随：推摇杆往哪边开，视角就慢慢转向那边（倒车不转；滑屏瞄准、开火时减弱）
-    if(S.follow && (mv.x || mv.y) && sp > 2){
-      const d = wrapA(Math.atan2(-this.vel.x, -this.vel.z) - this.yaw);
-      if(Math.abs(d) < 2.0){
-        const k = 2.2*Math.min(1, sp/7)*(Input.firing ? 0.35 : 1)*(Touch.swipeT > 0 ? 0.2 : 1);
-        this.yaw += clamp(d*k, -1.4, 1.4)*dt;
-      }
     }
     const fwd = this.vel.x*bf + this.vel.z*bz;
     for(const w of carWheels) w.rotation.x -= fwd*dt/0.5;
@@ -1687,7 +1693,7 @@ const Gun = {
     this.kick = damp(this.kick, 0, 18, dt);
     // 枪械晃动（转视角时滞后、移动时摆动）
     const sp = Math.hypot(Car.vel.x, Car.vel.z), t = Game.t;
-    this.swayX = damp(this.swayX, clamp(-Input.lastLookDX*3, -0.08, 0.08), 8, dt);
+    this.swayX = damp(this.swayX, clamp(-Input.lastLookDX*3 - (Car.turnRate || 0)*0.03, -0.08, 0.08), 8, dt);
     this.swayY = damp(this.swayY, clamp(Input.lastLookDY*3, -0.06, 0.06), 8, dt);
     gun.position.set(this.swayX + Math.sin(t*7)*0.012*sp/11, this.swayY + Math.abs(Math.cos(t*7))*0.014*sp/11 - this.kick*0.02, this.kick*0.09);
     gun.rotation.set(this.kick*0.03, this.swayX*0.5, 0);
