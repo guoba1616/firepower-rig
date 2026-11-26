@@ -138,6 +138,21 @@ html[lang=en] .title-en{letter-spacing:3px}
 .card .ic{width:56px;height:56px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--ic,#555);box-shadow:0 4px 0 #080b14b3}
 .card .nm{font-weight:900;font-size:18px;font-style:italic}
 .card .ds{font-size:13px;color:var(--muted);line-height:1.45}
+.card.wpn{background:#b8742a}
+.card.wpn .card-in{background:linear-gradient(180deg,#2a2f45,#1c2438 60%);padding-top:12px}
+.card.wpn:hover,.card.wpn:active{background:var(--accent)}
+.wimg{width:100%;height:96px;border-radius:14px;background:radial-gradient(circle at 50% 60%,#ffffff22,transparent 65%),#141a2a;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.wimg img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 0 #080b1499)}
+.wtag{position:absolute;top:10px;right:10px;padding:0 10px;border-radius:999px;background:#fff;color:var(--ink);font:900 12px/1.6 var(--num);box-shadow:0 3px 0 var(--accent)}
+.wtag.new{background:var(--accent);color:var(--ink);box-shadow:0 3px 0 var(--accent-lo);animation:blink 1s infinite}
+.stars{display:flex;gap:4px;margin-top:auto}
+.stars i{width:15px;height:15px;background:#3b4662;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.stars i.on{background:var(--gold)}
+.stars i.new{background:var(--accent);animation:blink .8s infinite}
+#wslots{position:absolute;top:calc(98px + var(--st));display:flex;gap:6px}
+#wslots .ws{position:relative;width:40px;height:32px;border-radius:10px;background:#0f1422cc;border:2px solid #ffffff2e}
+#wslots .ws img{width:100%;height:100%;object-fit:contain}
+#wslots .ws b{position:absolute;right:-4px;bottom:-5px;min-width:15px;padding:0 3px;border-radius:999px;background:var(--gold);color:var(--ink);font:900 10px/15px var(--num);text-align:center}
 .card .lv{font-size:12px;color:var(--muted);margin-top:auto}
 .pips{display:flex;gap:5px;margin-top:auto}
 .pips i{width:10px;height:10px;border-radius:50%;background:#3b4662}
@@ -279,7 +294,7 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
   .pause-panel{gap:9px;padding:12px 28px 18px}.pause-panel h2{margin:0;font-size:26px}.pause-panel .btn{min-height:40px;padding:7px 16px}
   .sub{margin:-4px 0 8px}
   .map-art{aspect-ratio:16/8}.map-info{padding:6px 12px 8px}.map-info h3{font-size:17px}
-  .cards{gap:10px}.card-in{padding:12px 8px 10px;gap:5px}.card .ic{width:44px;height:44px;border-radius:14px}.card .nm{font-size:16px}.card .ds{font-size:12px}
+  .cards{gap:10px}.card-in{padding:12px 8px 10px;gap:5px}.wimg{height:62px}.stars i{width:12px;height:12px}#wslots{top:calc(96px + var(--st))}#wslots .ws{width:34px;height:27px}.card .ic{width:44px;height:44px;border-radius:14px}.card .nm{font-size:16px}.card .ds{font-size:12px}
   .result-panel{padding:12px 28px 18px}.result-panel h2{font-size:26px}.result-status{margin-bottom:4px}
   .res{margin:10px 0 12px}.stat{padding:4px 12px 6px}.stat b{font-size:20px}.stat.main b{font-size:30px}
   #stick{width:130px;height:130px;bottom:calc(18px + var(--sb))}
@@ -302,6 +317,7 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
 
 <div id="hud">
   <div id="hpBox" class="sa-l hud-surface"><span id="heart"></span><div id="hpBar" class="bar"><i id="hpGhost" class="gh"></i><i id="hpFill"></i></div><b id="hpTxt" class="num">100</b></div>
+  <div id="wslots" class="sa-l"></div>
   <div id="scoreRow" class="sa-l hud-surface"><b id="scoreTxt" class="num">0</b><span id="killTxt"></span></div>
   <div id="waveBox" class="hud-surface"><div id="dayTxt"></div><div id="waveTxt"></div><div id="remBar" class="bar"><i></i></div><div id="subTxt"></div></div>
   <div id="bossBox" class="hud-surface"><div id="bossName"><span data-en="BOSS · Butcher">BOSS · 屠夫</span><span id="bossPct" class="num"></span></div><div id="bossBar" class="bar"><i></i></div></div>
@@ -1768,8 +1784,8 @@ function explode(p, o){
   FX.fire(p, o.radius);
   boomLight.position.set(p.x, p.y + 1.5, p.z); boomLight.intensity = 4;
   const d = Math.hypot(p.x - Car.pos.x, p.z - Car.pos.z), s = Sfx.spatial(p, 90);
-  Sfx.boom(Math.max(0.25, s.vol), s.pan); Cam.trauma(clamp(1.1 - d/25, 0.1, 0.8));
-  if(d < 28) vibrate(Math.round(clamp(100 - d*3.2, 15, 100)));
+  if(o.quiet){ Sfx.boom(Math.max(0.12, s.vol*0.45), s.pan); Cam.trauma(clamp(0.25 - d/60, 0, 0.12)); }
+  else { Sfx.boom(Math.max(0.25, s.vol), s.pan); Cam.trauma(clamp(1.1 - d/25, 0.1, 0.8)); if(d < 28) vibrate(Math.round(clamp(100 - d*3.2, 15, 100))); }
   for(const z of Zombies.list.slice()){
     if(z.dead || z.rise < 1) continue;
     const dx = z.pos.x - p.x, dz = z.pos.z - p.z, dd = Math.hypot(dx, dz), R = o.radius + z.r;
@@ -1840,10 +1856,255 @@ const Tracers = {
   clear(){ for(const tr of this.list){ scene.remove(tr.m); this.pool.push(tr.m); } this.list.length = 0; },
 };
 
+
+/* =====================================================================
+   9b. 武器（学 Survivor.io）：升级时可以拿新武器或给武器升级，每把最高 5 级，自动攻击
+   ===================================================================== */
+const WMODEL = {
+  gatling(){ const g = gunPivot.clone(); g.position.set(0, 0, 0); return g; },
+  rocket(){
+    const M = Merge(), OL = 0x56632c, OL2 = 0x47522a, DK = 0x1e2125, RD = 0xd0402a, OR = 0xe07a24;
+    M.box(1.0, 0.72, 1.3, 0, 0, 0, OL); M.box(1.04, 0.08, 1.34, 0, 0.38, 0, OL2); M.box(1.06, 0.1, 0.14, 0, 0, -0.5, OR);
+    for(const x of [-0.25, 0.25]) for(const y of [-0.16, 0.17]){ M.cyl(0.17, 0.08, x, y, -0.67, DK, 'z', 10); M.cyl(0.11, 0.16, x, y, -0.66, RD, 'z', 8, 0.25); }
+    M.box(0.24, 0.32, 0.5, 0, -0.5, 0.1, DK); M.box(0.6, 0.08, 0.6, 0, -0.68, 0.1, OL2);
+    return M.mesh(VC_MAT, false);
+  },
+  drone(){
+    const M = Merge(), BD = 0x3a3f44, DK = 0x1e2125, OR = 0xe07a24, ST = 0x7c838a;
+    M.box(0.62, 0.2, 0.62, 0, 0, 0, BD); M.box(0.4, 0.06, 0.4, 0, 0.13, 0, OR);
+    for(const a of [Math.PI/4, -Math.PI/4]) M.box(1.5, 0.07, 0.1, 0, 0.05, 0, DK, 0, a, 0);
+    for(const [x, z] of [[0.53, 0.53], [-0.53, 0.53], [0.53, -0.53], [-0.53, -0.53]]){ M.cyl(0.07, 0.14, x, 0.12, z, DK, 'y', 8); M.cyl(0.3, 0.02, x, 0.2, z, ST, 'y', 14); }
+    M.cyl(0.06, 0.42, 0, -0.16, -0.2, DK, 'z', 8); M.box(0.16, 0.12, 0.16, 0, -0.14, 0.02, DK);
+    return M.mesh(VC_MAT, false);
+  },
+  tesla(){
+    const M = Merge(), DK = 0x2a2f33, CU = 0xc8803c, ST = 0x8a9198, OR = 0xe07a24;
+    M.box(0.9, 0.26, 0.9, 0, 0, 0, DK); M.box(0.94, 0.06, 0.94, 0, 0.16, 0, OR);
+    M.cyl(0.1, 1.1, 0, 0.7, 0, ST, 'y', 8);
+    for(let i=0;i<6;i++) M.cyl(0.28 - i*0.015, 0.07, 0, 0.3 + i*0.12, 0, CU, 'y', 12);
+    M.cyl(0.42, 0.14, 0, 1.12, 0, ST, 'y', 14); M.cyl(0.3, 0.16, 0, 1.12, 0, DK, 'y', 12);
+    const g = new THREE.Group(); g.add(M.mesh(VC_MAT, false));
+    const orb = new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({ color:0x8ae8ff })); orb.scale.setScalar(0.3); orb.position.y = 1.36; orb.rotation.set(0.6, 0.6, 0); g.add(orb);
+    return g;
+  },
+  saw(){
+    const M = Merge(), ST = 0xb8c0c8, ST2 = 0x7c838a, OR = 0xe07a24;
+    M.cyl(0.7, 0.05, 0, 0, 0, ST, 'y', 20); M.cyl(0.5, 0.06, 0, 0, 0, ST2, 'y', 18);
+    for(let i=0;i<14;i++){ const a = i/14*Math.PI*2; M.box(0.18, 0.04, 0.1, Math.cos(a)*0.74, 0, Math.sin(a)*0.74, ST, 0, -a + 0.6, 0); }
+    M.cyl(0.16, 0.12, 0, 0, 0, OR, 'y', 10);
+    for(let i=0;i<4;i++){ const a = i/4*Math.PI*2 + 0.4; M.box(0.08, 0.07, 0.08, Math.cos(a)*0.32, 0, Math.sin(a)*0.32, 0x1e2125); }
+    return M.mesh(VC_MAT, false);
+  },
+  mine(){
+    const M = Merge(), OL = 0x4a5530, OL2 = 0x3a4426, DK = 0x1e2125, YL = 0xe8b62a;
+    M.cyl(0.46, 0.16, 0, 0.08, 0, OL, 'y', 16); M.cyl(0.47, 0.04, 0, 0.12, 0, YL, 'y', 16); M.cyl(0.3, 0.1, 0, 0.2, 0, OL2, 'y', 14);
+    for(let i=0;i<5;i++){ const a = i/5*Math.PI*2; M.box(0.05, 0.12, 0.05, Math.cos(a)*0.2, 0.3, Math.sin(a)*0.2, DK); }
+    const g = new THREE.Group(); g.add(M.mesh(VC_MAT, false));
+    const led = new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({ color:0xff2a1a })); led.scale.set(0.1, 0.08, 0.1); led.position.y = 0.28; led.name = 'led'; g.add(led);
+    return g;
+  },
+  rocketShell(){
+    const M = Merge();
+    M.cyl(0.08, 0.55, 0, 0, 0, 0xd8d8d0, 'z', 8); M.cyl(0.08, 0.18, 0, 0, 0.36, 0xd0402a, 'z', 8, 0);
+    for(const a of [0, Math.PI/2]) M.box(0.32, 0.03, 0.12, 0, 0, -0.24, 0x3a3f44, 0, 0, a);
+    return M.mesh(VC_MAT, false);
+  },
+};
+// 武器数据：每级的数值（下标 = 等级 - 1）和升级说明
+const WEAPONS = {
+  gatling:{ nm:['加特林', 'Gatling'], view:[1.5, 0.55, -0.6],
+    ds:[['主武器：按住开火', 'Main gun: hold to fire'], ['加装第二组枪管', 'Second barrel set'], ['子弹伤害 +30%', 'Bullet damage +30%'], ['加装第三组枪管', 'Third barrel set'], ['穿透 +2，射速 +20%', 'Pierce +2, fire rate +20%']],
+    up(lv){ if(lv === 2 || lv === 4){ Up.barrels = lv === 2 ? 2 : 3; layoutBarrels(Up.barrels); } if(lv === 3) Up.gatMul *= 1.3; if(lv === 5){ Up.pierce += 2; Up.rateMul *= 1.2; } } },
+  rocket:{ nm:['火箭巢', 'Rocket Pod'], view:[1.1, 0.7, -1.4], cd:[2.4, 2.3, 2.1, 1.9, 1.5], n:[1, 2, 2, 3, 4], dmg:[70, 80, 100, 110, 130], R:[3, 3, 3.6, 3.6, 4],
+    ds:[['自动发射追踪火箭', 'Fires homing rockets'], ['一次 2 枚', '2 rockets per salvo'], ['伤害 +25%，爆炸更大', 'Damage +25%, bigger blast'], ['一次 3 枚', '3 rockets per salvo'], ['一次 4 枚，装填更快', '4 rockets, faster reload']] },
+  drone:{ nm:['无人机', 'Drone'], view:[1.2, 1.1, -1.2], n:[1, 1, 2, 2, 3], cd:[0.55, 0.45, 0.45, 0.38, 0.32], dmg:[18, 24, 24, 30, 34],
+    ds:[['绕车飞行，自动射击', 'Orbits you and shoots'], ['射速和伤害提升', 'Faster, stronger shots'], ['再来一架无人机', 'A second drone'], ['射速和伤害提升', 'Faster, stronger shots'], ['第三架无人机', 'A third drone']] },
+  tesla:{ nm:['电弧线圈', 'Tesla Coil'], view:[1.2, 0.6, 1.3], cd:[1.8, 1.6, 1.4, 1.2, 1.0], n:[3, 4, 5, 6, 8], dmg:[40, 50, 60, 70, 85],
+    ds:[['电弧连跳 3 只僵尸', 'Lightning chains 3 zombies'], ['连跳 4 只，伤害提升', 'Chains 4, more damage'], ['连跳 5 只，更频繁', 'Chains 5, zaps faster'], ['连跳 6 只，伤害提升', 'Chains 6, more damage'], ['连跳 8 只，伤害大增', 'Chains 8, big damage']] },
+  saw:{ nm:['旋转锯刃', 'Saw Blades'], view:[0.5, 1.6, 1.0], n:[2, 3, 3, 4, 5], dmg:[25, 30, 40, 45, 58], spd:[2.6, 2.8, 3.4, 3.6, 4],
+    ds:[['锯刃绕车旋转', 'Blades circle your rig'], ['3 片锯刃', '3 blades'], ['伤害提升，转得更快', 'More damage, spins faster'], ['4 片锯刃', '4 blades'], ['5 片锯刃，伤害大增', '5 blades, big damage']] },
+  mine:{ nm:['地雷', 'Mines'], view:[0.9, 1.0, 1.2], cd:[1.6, 1.35, 1.2, 1.0, 0.8], dmg:[80, 95, 115, 130, 160], R:[3.2, 3.2, 3.4, 3.8, 4],
+    ds:[['自动在车旁布雷', 'Drops proximity mines'], ['布雷更快', 'Drops faster'], ['爆炸伤害提升', 'More blast damage'], ['更快，范围更大', 'Faster, bigger blast'], ['伤害大增', 'Big damage']] },
+};
+const MAX_WEAPONS = 4;
+// 卡片上的武器图片：用游戏里的 3D 模型渲染成小图
+const THUMB = {};
+function renderThumbs(){
+  const W = 320, H = 240, rt = new THREE.WebGLRenderTarget(W, H), sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, W/H, 0.01, 100);
+  sc.add(new THREE.HemisphereLight(0xffffff, 0x60504a, 1.05)); const dl = new THREE.DirectionalLight(0xffffff, 0.75); dl.position.set(2, 3, 1); sc.add(dl);
+  const buf = new Uint8Array(W*H*4), cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), img = g.createImageData(W, H);
+  const oldC = renderer.getClearColor(new THREE.Color()), oldA = renderer.getClearAlpha(), box = new THREE.Box3(), sph = new THREE.Sphere();
+  for(const id in WEAPONS){
+    const o = WMODEL[id](), hid = []; o.traverse(c => { if(!c.visible) hid.push(c); }); hid.forEach(c => c.parent && c.parent.remove(c)); sc.add(o); o.updateMatrixWorld(true);
+    box.setFromObject(o).getBoundingSphere(sph);
+    const v = WEAPONS[id].view, dir = new V3(v[0], v[1], v[2]).normalize();
+    cam.position.copy(sph.center).addScaledVector(dir, sph.radius/Math.sin(15*Math.PI/180)*0.82); cam.lookAt(sph.center);
+    renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(sc, cam);
+    renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf);
+    for(let y=0;y<H;y++) img.data.set(buf.subarray((H - 1 - y)*W*4, (H - y)*W*4), y*W*4);
+    g.clearRect(0, 0, W, H); g.putImageData(img, 0, 0); THUMB[id] = cv.toDataURL();
+    sc.remove(o);
+  }
+  renderer.setRenderTarget(null); renderer.setClearColor(oldC, oldA); rt.dispose();
+}
+
+const Arms = {
+  rockets:[], mines:[], bolts:[], saws:[], drones:[], cd:{}, sawA:0, t:0,
+  shell:WMODEL.rocketShell(), mineM:WMODEL.mine(), sawM:WMODEL.saw(), droneM:WMODEL.drone(),
+  boltGeo:(() => { const g = new THREE.BoxGeometry(1, 1, 1); g.translate(0, 0, 0.5); return g; })(),
+  boltMat:new THREE.MeshBasicMaterial({ color:0x9ae8ff, transparent:true, opacity:0.95, blending:THREE.AdditiveBlending, depthWrite:false, fog:false }),
+  lv(id){ return Up.wl[id] || 0; },
+  owned(){ return Object.keys(WEAPONS).filter(id => this.lv(id) > 0); },
+  reset(){ this.clear(); this.cd = { rocket:1.5, drone:0.5, tesla:1, mine:1 }; this.sync(); },
+  clear(){
+    for(const r of this.rockets) scene.remove(r.m); for(const m of this.mines) scene.remove(m.m); for(const b of this.bolts) scene.remove(b.m);
+    for(const o of this.saws) scene.remove(o); for(const o of this.drones) scene.remove(o.m);
+    this.rockets = []; this.mines = []; this.bolts = []; this.saws = []; this.drones = [];
+  },
+  // 锯刃 / 无人机数量跟着等级变
+  sync(){
+    const ns = this.lv('saw') ? WEAPONS.saw.n[this.lv('saw') - 1] : 0, nd = this.lv('drone') ? WEAPONS.drone.n[this.lv('drone') - 1] : 0;
+    while(this.saws.length < ns){ const m = this.sawM.clone(); m.scale.setScalar(1.15); scene.add(m); this.saws.push(m); }
+    while(this.saws.length > ns) scene.remove(this.saws.pop());
+    while(this.drones.length < nd){ const m = this.droneM.clone(); m.scale.setScalar(0.7); m.position.copy(Car.pos).setY(6); scene.add(m); this.drones.push({ m, aim:null }); }
+    while(this.drones.length > nd) scene.remove(this.drones.pop().m);
+  },
+  ok(z){ return z && !z.dead && !z.idle && z.rise >= 1; },
+  nearest(x, z, maxD, skip){
+    let best = null, bd = maxD*maxD;
+    for(const o of Zombies.list){ if(!this.ok(o) || (skip && skip.has(o))) continue; const d = (o.pos.x - x)**2 + (o.pos.z - z)**2; if(d < bd){ bd = d; best = o; } }
+    return best;
+  },
+  zap(a, b){
+    const pts = [a]; const n = 5;
+    for(let i=1;i<n;i++){ const p = a.clone().lerp(b, i/n); p.x += rand(-0.45, 0.45); p.y += rand(-0.45, 0.45); p.z += rand(-0.45, 0.45); pts.push(p); }
+    pts.push(b);
+    for(let i=0;i<pts.length - 1;i++){
+      const m = new THREE.Mesh(this.boltGeo, this.boltMat); m.frustumCulled = false;
+      const d = pts[i + 1].clone().sub(pts[i]), L = d.length();
+      m.position.copy(pts[i]); m.lookAt(pts[i + 1]); m.scale.set(0.09, 0.09, L); scene.add(m);
+      this.bolts.push({ m, t:0.16 });
+    }
+  },
+  update(dt, active){
+    this.t += dt;
+    const P = Car.pos;
+    // ---- 火箭 ----
+    const lr = this.lv('rocket');
+    if(lr && active){
+      this.cd.rocket -= dt;
+      if(this.cd.rocket <= 0){
+        const W = WEAPONS.rocket, k = lr - 1; let fired = 0;
+        for(let i=0;i<W.n[k];i++){
+          const tg = this.nearest(P.x, P.z, 38); if(!tg) break;
+          const m = this.shell.clone(); scene.add(m);
+          const p = new V3(P.x + rand(-0.8, 0.8), 2.4, P.z + rand(-0.8, 0.8));
+          this.rockets.push({ m, p, v:new V3(rand(-4, 4), rand(8, 11), rand(-4, 4)), tg, t:-i*0.12, dmg:W.dmg[k], R:W.R[k] });
+          fired++;
+        }
+        this.cd.rocket = fired ? W.cd[k] : 0.4;
+        if(fired){ const s = Sfx.spatial(P, 60); Sfx.noise(0.25, 0.12*s.vol, 'bandpass', 900, 0.8, s.pan, 0.01); }
+      }
+    }
+    for(let i=this.rockets.length - 1;i>=0;i--){
+      const r = this.rockets[i]; r.t += dt; if(r.t < 0){ r.m.visible = false; continue; } r.m.visible = true;
+      if(!this.ok(r.tg)) r.tg = this.nearest(r.p.x, r.p.z, 30);
+      if(r.tg){
+        const tx = r.tg.pos.x - r.p.x, ty = r.tg.pos.y + 1*r.tg.s - r.p.y, tz = r.tg.pos.z - r.p.z, L = Math.hypot(tx, ty, tz) || 1;
+        const sp = Math.min(34, 14 + r.t*30), k = Math.min(1, dt*(2 + r.t*7));
+        r.v.x += (tx/L*sp - r.v.x)*k; r.v.y += (ty/L*sp - r.v.y)*k; r.v.z += (tz/L*sp - r.v.z)*k;
+        if(L < 1.1 + r.tg.r){ this.boom(r, i); continue; }
+      } else r.v.y -= 12*dt;
+      r.p.addScaledVector(r.v, dt);
+      r.m.position.copy(r.p); r.m.lookAt(r.p.x + r.v.x, r.p.y + r.v.y, r.p.z + r.v.z);
+      if(Math.random() < 0.8) PL.spawn(r.p.x, r.p.y, r.p.z, rand(-0.4, 0.4), rand(0, 0.6), rand(-0.4, 0.4), rand(0.16, 0.28), 0x8a8a88, rand(0.35, 0.6), -1, 0, 2);
+      PG.spawn(r.p.x - r.v.x*0.012, r.p.y - r.v.y*0.012, r.p.z - r.v.z*0.012, 0, 0, 0, rand(0.12, 0.2), 0xffb040, 0.1, 0);
+      if(r.p.y < 0.3 || r.t > 4){ this.boom(r, i); }
+    }
+    // ---- 无人机 ----
+    const ld = this.lv('drone');
+    if(ld){
+      const W = WEAPONS.drone, k = ld - 1, n = this.drones.length;
+      if(active) this.cd.drone -= dt;
+      const shoot = active && this.cd.drone <= 0; if(shoot) this.cd.drone = W.cd[k];
+      this.drones.forEach((d, i) => {
+        const a = this.t*1.3 + i/n*Math.PI*2, tx = P.x + Math.cos(a)*5, tz = P.z + Math.sin(a)*5, ty = 6.2 + Math.sin(this.t*3 + i*2)*0.25;
+        d.m.position.x = damp(d.m.position.x, tx, 6, dt); d.m.position.y = damp(d.m.position.y, ty, 6, dt); d.m.position.z = damp(d.m.position.z, tz, 6, dt);
+        if(!this.ok(d.aim)) d.aim = this.nearest(d.m.position.x, d.m.position.z, 26);
+        if(d.aim) d.m.rotation.y = angleDamp(d.m.rotation.y, Math.atan2(-(d.aim.pos.x - d.m.position.x), -(d.aim.pos.z - d.m.position.z)), 8, dt);
+        d.m.rotation.z = Math.sin(this.t*2 + i)*0.08;
+        if(shoot && d.aim){
+          const z = d.aim, tp = z.pos.clone().setY(z.pos.y + 1.1*z.s), dir = tp.clone().sub(d.m.position).normalize();
+          Zombies.damage(z, W.dmg[k]*Up.dmgMul, dir, 0.6, false, tp, false); FX.blood(tp, dir, 3);
+          Tracers.add(d.m.position.clone().addScaledVector(dir, 0.5), tp);
+          if(Math.hypot(z.pos.x - P.x, z.pos.z - P.z) > 26) d.aim = null;
+        }
+      });
+    }
+    // ---- 电弧线圈 ----
+    const lt = this.lv('tesla');
+    if(lt && active){
+      this.cd.tesla -= dt;
+      if(this.cd.tesla <= 0){
+        const W = WEAPONS.tesla, k = lt - 1, hit = new Set();
+        let cur = this.nearest(P.x, P.z, 16), from = new V3(P.x, 2.8, P.z);
+        this.cd.tesla = cur ? W.cd[k] : 0.3;
+        if(cur){ const s = Sfx.spatial(P, 60); Sfx.tone('sawtooth', 1600, 240, 0.14, 0.07*s.vol, s.pan); }
+        for(let j=0;j<W.n[k] && cur;j++){
+          hit.add(cur);
+          const to = cur.pos.clone().setY(cur.pos.y + 1.1*cur.s); this.zap(from, to);
+          for(let q=0;q<4;q++) PG.spawn(to.x, to.y, to.z, rand(-3, 3), rand(1, 4), rand(-3, 3), rand(0.05, 0.1), 0xbaf4ff, rand(0.15, 0.3), 14);
+          const dir = to.clone().sub(from).setY(0).normalize();
+          Zombies.damage(cur, W.dmg[k]*Up.dmgMul, dir, 0.4, false, to, false);
+          from = to; cur = this.nearest(to.x, to.z, 7.5, hit);
+        }
+      }
+    }
+    for(let i=this.bolts.length - 1;i>=0;i--){ const b = this.bolts[i]; b.t -= dt; b.m.scale.x = b.m.scale.y = 0.09*Math.max(0.2, b.t/0.16); if(b.t <= 0){ scene.remove(b.m); this.bolts.splice(i, 1); } }
+    // ---- 锯刃 ----
+    const ls = this.lv('saw');
+    if(ls){
+      const W = WEAPONS.saw, k = ls - 1, n = this.saws.length; this.sawA += dt*W.spd[k];
+      const R = 4.4;
+      this.saws.forEach((m, i) => { const a = this.sawA + i/n*Math.PI*2; m.position.set(P.x + Math.cos(a)*R, 0.9, P.z + Math.sin(a)*R); m.rotation.y -= dt*18; });
+      if(active) for(const z of Zombies.list.slice()){
+        if(!this.ok(z) || (z._sawT || 0) > this.t) continue;
+        for(const m of this.saws){
+          const dx = z.pos.x - m.position.x, dz = z.pos.z - m.position.z;
+          if(dx*dx + dz*dz < (0.9 + z.r)**2){
+            z._sawT = this.t + 0.3;
+            const dir = new V3(dx, 0, dz).normalize(), pt = z.pos.clone().setY(z.pos.y + 0.9*z.s);
+            Zombies.damage(z, W.dmg[k]*Up.dmgMul, dir, 2.2, false, pt, false); FX.blood(pt, dir, 4); FX.sparks(m.position, 2);
+            break;
+          }
+        }
+      }
+    }
+    // ---- 地雷 ----
+    const lm = this.lv('mine');
+    if(lm && active){
+      this.cd.mine -= dt;
+      if(this.cd.mine <= 0 && this.mines.length < 14){
+        const W = WEAPONS.mine, k = lm - 1; this.cd.mine = W.cd[k];
+        const a = Math.random()*Math.PI*2, r = rand(2.2, 3.6), p = { x:P.x + Math.cos(a)*r, z:P.z + Math.sin(a)*r };
+        if(!World.pushOut(p, 0.5)){ const m = this.mineM.clone(); m.position.set(p.x, World.heightAt ? World.heightAt(p.x, p.z) || 0 : 0, p.z); scene.add(m); this.mines.push({ m, t:0, dmg:W.dmg[k], R:W.R[k], led:m.getObjectByName('led') }); }
+      }
+    }
+    for(let i=this.mines.length - 1;i>=0;i--){
+      const mi = this.mines[i]; mi.t += dt;
+      if(mi.led) mi.led.visible = mi.t < 0.6 || Math.sin(mi.t*10) > 0;
+      let go = mi.t > 25;
+      if(mi.t > 0.6 && active) for(const z of Zombies.list){ if(this.ok(z) && Math.hypot(z.pos.x - mi.m.position.x, z.pos.z - mi.m.position.z) < 1.4 + z.r){ go = true; break; } }
+      if(go){ scene.remove(mi.m); this.mines.splice(i, 1); if(mi.t <= 25) explode(mi.m.position.clone().setY(0.6), { radius:mi.R, zDmg:mi.dmg, pDmg:0, quiet:true }); }
+    }
+  },
+  boom(r, i){ scene.remove(r.m); this.rockets.splice(i, 1); explode(r.p.clone(), { radius:r.R, zDmg:r.dmg, pDmg:0, quiet:true }); },
+};
+
 /* =====================================================================
    10. 强化（每波结束三选一）
    ===================================================================== */
-const Up = { magnet:1, dmgMul:1, rateMul:1, heatMul:1, barrels:1, pierce:0, ramMul:1, ramArmor:false, speedMul:1, boomEvery:0, leech:0, headMul:2, lv:{} };
+const Up = { wl:{ gatling:1 }, gatMul:1, magnet:1, dmgMul:1, rateMul:1, heatMul:1, barrels:1, pierce:0, ramMul:1, ramArmor:false, speedMul:1, boomEvery:0, leech:0, headMul:2, lv:{} };
 const UP_EN = {
   dmg:['AP Cores','Bullet damage +20%'], rate:['Rapid Action','Fire rate +15%'], cool:['Liquid Cooling','Barrel heat-up -25%'],
   armor:['Composite Armor','Max HP +25, heals 25'], repair:['Field Repair','Heal 60% HP now'], twin:['Twin Barrels','Extra barrel set: +1 bullet per shot'],
@@ -1857,7 +2118,6 @@ const UPGRADES = [
   { id:'cool',   ic:'❄️', nm:'液冷枪管', ds:'枪管升温速度 -25%', max:5, f(){ Up.heatMul *= 0.75; } },
   { id:'armor',  ic:'🛡️', nm:'复合装甲', ds:'最大生命 +25，并回复 25', max:6, f(){ Car.maxHp += 25; Car.heal(25); } },
   { id:'repair', ic:'🔧', nm:'紧急维修', ds:'立即回复 60% 生命', max:99, f(){ Car.heal(Car.maxHp*0.6); } },
-  { id:'twin',   ic:'🔫', nm:'多联转管', ds:'加装一组枪管：每次射击多打 1 发', max:2, f(){ Up.barrels++; layoutBarrels(Up.barrels); } },
   { id:'pierce', ic:'➶',  nm:'贯穿射击', ds:'子弹可多穿透 1 只僵尸', max:3, f(){ Up.pierce++; } },
   { id:'ram',    ic:'🦏', nm:'钢铁撞角', ds:'撞击伤害 +60%，撞重型僵尸不再掉血', max:4, f(){ Up.ramMul *= 1.6; Up.ramArmor = true; ramSpikes.visible = true; } },
   { id:'engine', ic:'🏎️', nm:'涡轮引擎', ds:'移动速度 +12%', max:4, f(){ Up.speedMul *= 1.12; } },
@@ -1867,10 +2127,18 @@ const UPGRADES = [
   { id:'magnet', ic:'🧲', nm:'磁吸装置', ds:'经验拾取范围 +40%', max:4, levelOnly:true, f(){ Up.magnet *= 1.4; } },
 ];
 function upgradeChoices(){
-  const pool = UPGRADES.filter(u => (Up.lv[u.id] || 0) < u.max && !(u.id === 'repair' && Car.hp > Car.maxHp*0.75) && (!u.levelOnly || Level.on));
+  const full = Arms.owned().length >= MAX_WEAPONS;
+  const wp = Object.keys(WEAPONS).filter(id => Arms.lv(id) < 5 && (Arms.lv(id) > 0 || !full)).map(id => ({ weapon:true, id, w:Arms.lv(id) ? 2 : 2.4 }));
+  const pool = wp.concat(UPGRADES.filter(u => (Up.lv[u.id] || 0) < u.max && !(u.id === 'repair' && Car.hp > Car.maxHp*0.75) && (!u.levelOnly || Level.on)).map(u => Object.assign({ w:1 }, u)));
   if(!pool.length) return [UPGRADES.find(u => u.id === 'repair')];
   const out = [];
-  while(out.length < 3 && pool.length){ out.push(pool.splice((Math.random()*pool.length)|0, 1)[0]); }
+  while(out.length < 3 && pool.length){
+    let sum = 0; for(const u of pool) sum += u.w; let r = Math.random()*sum, i = 0;
+    for(;i<pool.length - 1;i++){ r -= pool[i].w; if(r <= 0) break; }
+    out.push(pool.splice(i, 1)[0]);
+  }
+  // 至少有一张武器卡
+  if(!out.some(u => u.weapon)){ const w = pool.filter(u => u.weapon); if(w.length) out[(Math.random()*out.length)|0] = w[(Math.random()*w.length)|0]; }
   return out;
 }
 
@@ -2008,7 +2276,7 @@ const Gun = {
     let n = 1 + Up.pierce, end = wh.t, anyKill = false, anyHead = false, any = false;
     for(const h of zs){
       if(n <= 0) break;
-      const dmg = 20*Up.dmgMul*(h.head ? Up.headMul : 1), pt = o.clone().addScaledVector(d, h.t);
+      const dmg = 20*Up.dmgMul*Up.gatMul*(h.head ? Up.headMul : 1), pt = o.clone().addScaledVector(d, h.t);
       const killed = Zombies.damage(h.z, dmg, d, 1.2, h.head, pt, false);
       FX.blood(pt, d, h.head ? 7 : 4);
       any = true; anyKill = anyKill || killed; anyHead = anyHead || h.head;
@@ -2429,6 +2697,9 @@ const Gems = {
    ===================================================================== */
 const HUD = {
   annT:0, toastT:0, hitT:0, lastTxt:{}, lastW:{}, lastScore:-1,
+  weapons(){
+    $('wslots').innerHTML = Arms.owned().map(id => `<div class="ws"><img src="${THUMB[id] || ''}" alt=""><b>${Arms.lv(id)}</b></div>`).join('');
+  },
   set(id, v){ if(this.lastTxt[id] !== v){ this.lastTxt[id] = v; $(id).textContent = v; } },
   // 进度条宽度（只在变化时写 DOM）
   bar(el, key, frac){ const w = Math.round(clamp(frac, 0, 1)*1000)/10; if(this.lastW[key] !== w){ this.lastW[key] = w; el.style.width = w + '%'; } },
@@ -2581,8 +2852,8 @@ const Game = {
     World.build(lv ? lv.map : 'town'); Level.reset(lv); Gems.clear(); Dawn.burning = false; Sky.set(0);
     Sfx.init(); if(S.gyro) Gyro.request(); Gyro.reset();
     if(IS_TOUCH && !IS_APP){ try { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if(r) r.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch(e){} }
-    Object.assign(Up, { magnet:1, dmgMul:1, rateMul:1, heatMul:1, barrels:1, pierce:0, ramMul:1, ramArmor:false, speedMul:1, boomEvery:0, leech:0, headMul:2, lv:{} });
-    Car.reset(); Gun.reset(); Zombies.reset(); Waves.reset(); PL.clear(); PG.clear(); Acid.clear(); Blasts.clear(); Pickups.clear(); Tracers.clear(); BossLane.hide();
+    Object.assign(Up, { wl:{ gatling:1 }, gatMul:1, magnet:1, dmgMul:1, rateMul:1, heatMul:1, barrels:1, pierce:0, ramMul:1, ramArmor:false, speedMul:1, boomEvery:0, leech:0, headMul:2, lv:{} });
+    Car.reset(); Gun.reset(); Zombies.reset(); Arms.reset(); HUD.weapons(); Waves.reset(); PL.clear(); PG.clear(); Acid.clear(); Blasts.clear(); Pickups.clear(); Tracers.clear(); BossLane.hide();
     this.score = 0; this.kills = 0; this.timeScale = 1; this.t = 0;
     $('dmgDirs').innerHTML = '';
     this.showOv(null); this.setState('play');
@@ -2602,7 +2873,7 @@ const Game = {
   quit(){
     this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock();
     World.build('town'); Level.reset(null); Gems.clear(); Dawn.burning = false; Sky.set(1);
-    Car.reset(); Car.sync(); Waves.reset(); Acid.clear(); Pickups.clear(); Tracers.clear(); Blasts.clear(); this.menuScene();
+    Arms.clear(); Car.reset(); Car.sync(); Waves.reset(); Acid.clear(); Pickups.clear(); Tracers.clear(); Blasts.clear(); this.menuScene();
     this.setState('menu'); this.showOv('menu'); Sfx.engine(0, false); refreshMenu();
   },
   onKill(z, head){
@@ -2622,12 +2893,23 @@ const Game = {
     $('upTitle').textContent = Level.on ? T('升级！', 'LEVEL UP!') + ' Lv ' + (Level.lv - Level.pend + 1) : Waves.phase === 'dawn' ? T('天亮了', 'Daybreak') : T('第 ' + Waves.n + ' 波完成', 'Wave ' + Waves.n + ' complete');
     const box = $('cards'); box.innerHTML = '';
     upgradeChoices().forEach((u, i) => {
-      const lv = Up.lv[u.id] || 0, c = document.createElement('div'); c.className = 'card'; c.style.animationDelay = (i*0.09) + 's';
-      let pips = '';
-      if(u.max < 99){ for(let k=0;k<u.max;k++) pips += `<i class="${k < lv ? 'on' : k === lv ? 'new' : ''}"></i>`; pips = `<div class="pips">${pips}</div>`; }
-      else pips = '<div class="lv">' + T('可重复', 'Repeatable') + '</div>';
-      c.innerHTML = `<div class="card-in"><div class="ic" style="--ic:${ICON[u.id] ? ICON[u.id][2] : '#555'}">${ICON[u.id] ? ico(u.id, 30) : u.ic}</div><div class="nm">${T(u.nm, UP_EN[u.id][0])}</div><div class="ds">${T(u.ds, UP_EN[u.id][1])}</div>${pips}</div><b class="plate">${i + 1}</b>`;
-      c.onclick = () => { Sfx.click(); Up.lv[u.id] = lv + 1; u.f();
+      const c = document.createElement('div'); c.className = 'card' + (u.weapon ? ' wpn' : ''); c.style.animationDelay = (i*0.09) + 's';
+      let lv, apply;
+      if(u.weapon){
+        const W = WEAPONS[u.id]; lv = Arms.lv(u.id);
+        let st = ''; for(let k=0;k<5;k++) st += `<i class="${k < lv ? 'on' : k === lv ? 'new' : ''}"></i>`;
+        const d = W.ds[lv];
+        c.innerHTML = `<div class="card-in"><div class="wimg"><img src="${THUMB[u.id] || ''}" alt=""></div><div class="nm">${T(W.nm[0], W.nm[1])}</div><div class="ds">${T(d[0], d[1])}</div><div class="stars">${st}</div></div><b class="plate">${i + 1}</b><b class="wtag${lv ? '' : ' new'}">${lv ? 'Lv ' + (lv + 1) : T('新武器', 'NEW')}</b>`;
+        apply = () => { Up.wl[u.id] = lv + 1; if(W.up) W.up(lv + 1); Arms.sync(); HUD.weapons(); };
+      } else {
+        lv = Up.lv[u.id] || 0;
+        let pips = '';
+        if(u.max < 99){ for(let k=0;k<u.max;k++) pips += `<i class="${k < lv ? 'on' : k === lv ? 'new' : ''}"></i>`; pips = `<div class="pips">${pips}</div>`; }
+        else pips = '<div class="lv">' + T('可重复', 'Repeatable') + '</div>';
+        c.innerHTML = `<div class="card-in"><div class="ic" style="--ic:${ICON[u.id] ? ICON[u.id][2] : '#555'}">${ICON[u.id] ? ico(u.id, 30) : u.ic}</div><div class="nm">${T(u.nm, UP_EN[u.id][0])}</div><div class="ds">${T(u.ds, UP_EN[u.id][1])}</div>${pips}</div><b class="plate">${i + 1}</b>`;
+        apply = () => { Up.lv[u.id] = lv + 1; u.f(); };
+      }
+      c.onclick = () => { Sfx.click(); apply();
         if(Level.on){ Level.pend--; if(Level.pend > 0){ this.showUpgrade(); return; } this.showOv(null); this.setState('play'); Gyro.reset(); if(!IS_TOUCH) lockPointer(); return; }
         this.showOv(null); this.setState('play'); Waves.phase = 'wait'; Waves.t = Day.day ? 14 : 3; Gyro.reset(); if(!IS_TOUCH) lockPointer(); };
       box.appendChild(c);
@@ -2665,7 +2947,7 @@ const Game = {
     this.t += dt;
     Gyro.step(dt); Assist.step(dt); Input.applyLook();
     Car.update(dt); Gun.update(dt);
-    Zombies.update(dt); Acid.update(dt); Blasts.update(dt); Pickups.update(dt);
+    Zombies.update(dt); Acid.update(dt); Blasts.update(dt); Pickups.update(dt); Arms.update(dt, !Car.dead);
     if(!Car.dead){ if(Level.on) Level.update(dt); else Waves.update(dt); }
     if(Level.on) Gems.update(dt);
     Dawn.update(dt);
@@ -2806,11 +3088,11 @@ function applyGyroUI(){ document.body.classList.toggle('gyro-on', IS_TOUCH && !!
 $('heart').innerHTML = ico('heart', 22);
 for(const e of document.querySelectorAll('[data-ic]')) e.innerHTML = ico(e.dataset.ic, 22);
 $('pauseBtn').innerHTML = ico('pause', 22); $('calBtn').innerHTML = ico('cal', 22);
-FireRing.build(); applyGyroUI();
+FireRing.build(); applyGyroUI(); renderThumbs();
 Car.reset(); Car.sync(); Game.menuScene(); applyLang(); applyQuality();
 $('loading').remove(); Game.showOv('menu');
 requestAnimationFrame(frame);
-window.FP = { Day, Sky, Dawn, Level, Gems, LEVELS, renderer, scene, camera, carG, gunScene, gunCam, Game, Car, Gun, Zombies, Waves, Input, Up, Gyro, Assist, Touch, HUD, World, S, tick(sec, fn){ for(let i=0;i<sec*60;i++){ if(fn) fn(i/60); advance(1/60); } } };   // 调试用
+window.FP = { Arms, WEAPONS, THUMB, Day, Sky, Dawn, Level, Gems, LEVELS, renderer, scene, camera, carG, gunScene, gunCam, Game, Car, Gun, Zombies, Waves, Input, Up, Gyro, Assist, Touch, HUD, World, S, tick(sec, fn){ for(let i=0;i<sec*60;i++){ if(fn) fn(i/60); advance(1/60); } } };   // 调试用
 </script>
 </body>
 </html>
