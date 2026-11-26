@@ -350,6 +350,7 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
       <label class="row tOnly"><span data-en="Gyro aiming">陀螺仪瞄准</span><input type="checkbox" id="sGyro"></label>
       <label class="row tOnly gyroOnly"><span data-en="Gyro sensitivity">陀螺仪灵敏度</span><input type="range" id="sGyroSens" min="0.5" max="3" step="0.1"><output></output></label>
       <label class="row pOnly"><span data-en="Mouse sensitivity">鼠标灵敏度</span><input type="range" id="sMouseSens" min="0.2" max="3" step="0.1"><output></output></label>
+      <label class="row"><span data-en="Turret cockpit">炮塔舱视角</span><input type="checkbox" id="sCockpit"></label>
       <label class="row"><span data-en="Volume">音量</span><input type="range" id="sVol" min="0" max="1" step="0.05"><output></output></label>
       <label class="row"><span data-en="High quality">高画质</span><input type="checkbox" id="sHq"></label>
       <div class="row"><span>语言 · Language</span><span class="seg" id="sLang"><button data-l="zh">中文</button><button data-l="en">English</button></span></div>
@@ -448,7 +449,7 @@ if(IS_TOUCH) document.body.classList.add('touch');
 /* =====================================================================
    1. 设置（localStorage）
    ===================================================================== */
-const S = { v:4, gyro:false, gyroSens:1.5, dragSens:1.0, assist:true, mouseSens:1.0, vol:0.8, hq:!IS_TOUCH, vib:true, follow:IS_TOUCH, lang:/^zh/i.test(navigator.language || '') ? 'zh' : 'en' };
+const S = { v:4, gyro:false, gyroSens:1.5, dragSens:1.0, assist:true, mouseSens:1.0, vol:0.8, hq:!IS_TOUCH, vib:true, cockpit:true, follow:IS_TOUCH, lang:/^zh/i.test(navigator.language || '') ? 'zh' : 'en' };
 try {
   const old = JSON.parse(localStorage.getItem('fp_settings') || '{}');
   if(old.v !== 2 && old.v !== 3){ delete old.gyro; delete old.dragSens; old.v = 2; }   // v1 默认陀螺仪；v2 起默认滑屏
@@ -1311,6 +1312,70 @@ function layoutBarrels(n){
 }
 layoutBarrels(1);
 
+/* ---- 炮塔舱：装甲内壁 + 观察窗，跟着视角一起转（叠加在枪械场景里） ---- */
+const cockpit = new THREE.Group(); gunScene.add(cockpit);
+const CK_D = 2.0, CK_H = CK_D*Math.tan(29*Math.PI/180);
+const CK_SCREEN = (() => {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 64; const g = c.getContext('2d');
+  g.fillStyle = '#06170e'; g.fillRect(0, 0, 128, 64);
+  g.strokeStyle = '#13472a'; g.lineWidth = 1;
+  for(let x=8;x<128;x+=16){ g.beginPath(); g.moveTo(x + 0.5, 0); g.lineTo(x + 0.5, 64); g.stroke(); }
+  for(let y=8;y<64;y+=16){ g.beginPath(); g.moveTo(0, y + 0.5); g.lineTo(128, y + 0.5); g.stroke(); }
+  g.strokeStyle = '#4dff8f'; g.lineWidth = 2; g.beginPath();
+  for(let x=0;x<=128;x+=2){ const y = 32 + Math.sin(x*0.11)*12*Math.cos(x*0.023); x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+  g.fillStyle = '#4dff8f'; for(let i=0;i<5;i++) g.fillRect(96 + i*6, 50 - i*5, 4, 6 + i*5);
+  for(let y=0;y<64;y+=2){ g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, y, 128, 1); }
+  const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; return t;
+})();
+const CK_SCREEN_MAT = new THREE.MeshBasicMaterial({ map:CK_SCREEN, color:0xb0ffcc });
+const CK_LAMP_MAT = new THREE.MeshBasicMaterial({ color:0xff3a2a });
+const CK_GLASS_MAT = new THREE.MeshBasicMaterial({ color:0xcfe6ff, transparent:true, opacity:0.05, depthWrite:false, side:THREE.DoubleSide });
+function buildCockpit(aspect){
+  for(const o of cockpit.children.slice()){ cockpit.remove(o); if(o.geometry) o.geometry.dispose(); }
+  const H = CK_H, W = H*aspect, z = -CK_D, M = Merge();
+  const top = 0.7*H, bot = -0.6*H, side = W*0.87, ext = 0.6;
+  const AR = 0x434b36, AR2 = 0x363d2c, TR = 0x24282a, STL = 0x6b7278, RIV = 0x9aa1a8, OR = 0xe07a24;
+  // 上方装甲、下方仪表台、左右立柱
+  M.box(2*W + 2*ext, H - top + ext, 0.14, 0, (top + H + ext)/2, z, AR);
+  M.box(2*W + 2*ext, bot + H + ext, 0.14, 0, (bot - H - ext)/2, z, AR2);
+  for(const sx of [-1, 1]) M.box(W - side + ext, 2*H + 2*ext, 0.14, sx*(side + (W - side + ext)/2), 0, z, AR);
+  // 观察窗内沿（有厚度）
+  M.box(2*side, 0.07, 0.34, 0, top + 0.035, z + 0.14, TR);
+  M.box(2*side, 0.06, 0.2, 0, bot - 0.03, z + 0.1, STL);                               // 下沿：窄窗台
+  M.box(2*side, 0.025, 0.03, 0, bot - 0.075, z + 0.2, OR);                              // 窗台前缘警示条
+  for(const sx of [-1, 1]) M.box(0.07, top - bot, 0.34, sx*(side + 0.035), (top + bot)/2, z + 0.14, TR);
+  // 四角斜切的加强板
+  const c = 0.2*H;
+  for(const sx of [-1, 1]) for(const [cy, sy] of [[top, 1], [bot, -1]]){
+    M.box(c*1.5, c*1.5, 0.16, sx*side, cy, z + 0.02, AR2, 0, 0, Math.PI/4);
+    for(let k=1;k<=2;k++) M.box(0.035, 0.035, 0.03, sx*(side - c*0.32*k), cy - sy*c*0.06, z + 0.11, RIV);
+  }
+  // 铆钉：上沿、立柱
+  const nTop = Math.round(side/0.16);
+  for(let i=0;i<=nTop;i++){ const x = -side + 0.1 + i*(2*side - 0.2)/nTop; M.box(0.04, 0.04, 0.03, x, top + 0.1, z + 0.09, RIV); }
+  for(const sx of [-1, 1]) for(let i=0;i<7;i++) M.box(0.04, 0.04, 0.03, sx*(side + 0.12), bot + 0.12 + i*(top - bot - 0.24)/6, z + 0.09, RIV);
+  // 顶上的横梁和潜望镜
+  M.box(2*W + 2*ext, 0.12, 0.3, 0, top + 0.32, z + 0.2, TR);
+  M.box(0.5, 0.18, 0.4, 0, top + 0.2, z + 0.24, STL); M.box(0.36, 0.06, 0.06, 0, top + 0.13, z + 0.45, TR);
+  // 仪表台：面板、开关
+  for(const sx of [-1, 1]){
+    M.box(0.62*H, 0.34*H, 0.06, sx*side*0.56, bot - 0.24*H, z + 0.08, TR);
+    for(let i=0;i<4;i++) M.box(0.04, 0.07, 0.05, sx*side*0.56 + (i - 1.5)*0.09, bot - 0.47*H, z + 0.12, i === 1 ? OR : STL);
+  }
+  M.box(0.06, 2*H, 0.1, -side - 0.3, 0, z + 0.3, STL);                                 // 左侧管线
+  M.box(0.05, 2*H, 0.08, side + 0.34, 0, z + 0.3, STL);
+  const mesh = M.mesh(VC_MAT_G, false); cockpit.add(mesh);
+  // 两块发光屏幕 + 红色指示灯
+  for(const sx of [-1, 1]){
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.52*H, 0.26*H), CK_SCREEN_MAT); scr.position.set(sx*side*0.56, bot - 0.22*H, z + 0.115); cockpit.add(scr);
+    const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.04), CK_LAMP_MAT); lamp.position.set(sx*side*0.56 + sx*0.32*H, bot - 0.06*H, z + 0.12); cockpit.add(lamp);
+  }
+  // 观察窗玻璃：淡淡的反光条
+  for(const [x, w] of [[-side*0.35, 0.16*H], [-side*0.22, 0.06*H], [side*0.55, 0.1*H]]){
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(w, (top - bot)*1.25), CK_GLASS_MAT); p.position.set(x, (top + bot)/2, z - 0.02); p.rotation.z = -0.5; cockpit.add(p);
+  }
+}
+
 /* =====================================================================
    8. 僵尸（模型、配色、数值来自 Blockade：InstancedMesh，每只 21 个部件）
    ===================================================================== */
@@ -1915,6 +1980,7 @@ const Gun = {
     const sp = Math.hypot(Car.vel.x, Car.vel.z), t = Game.t;
     this.swayX = damp(this.swayX, clamp(-Input.lastLookDX*3 - (Car.turnRate || 0)*0.03, -0.08, 0.08), 8, dt);
     this.swayY = damp(this.swayY, clamp(Input.lastLookDY*3, -0.06, 0.06), 8, dt);
+    cockpit.position.set(this.swayX*0.25, this.swayY*0.25 + Math.abs(Math.cos(t*7))*0.006*sp/11, 0); cockpit.visible = !!S.cockpit;
     gun.position.set(this.swayX + Math.sin(t*7)*0.012*sp/11, this.swayY + Math.abs(Math.cos(t*7))*0.014*sp/11 - this.kick*0.02, this.kick*0.09);
     gun.rotation.set(this.kick*0.03, this.swayX*0.5, 0);
   },
@@ -2671,6 +2737,7 @@ function resize(){
   gunCam.aspect = w/h; gunCam.updateProjectionMatrix();
   // 竖屏/窄屏时枪往上抬一点，保持在画面下方中间
   gun.scale.setScalar(w/h < 1.5 ? 0.85 : 1);
+  buildCockpit(w/h); cockpit.visible = !!S.cockpit;
 }
 function applyQuality(){
   renderer.shadowMap.enabled = S.hq; sunL.castShadow = S.hq;
@@ -2715,7 +2782,7 @@ function openSettings(){
     };
   };
   bind('sGyro', 'gyro'); bind('sGyroSens', 'gyroSens', v => v.toFixed(1)); bind('sDragSens', 'dragSens', v => v.toFixed(1)); bind('sAssist', 'assist');
-  bind('sMouseSens', 'mouseSens', v => v.toFixed(1)); bind('sVol', 'vol', v => Math.round(v*100)); bind('sHq', 'hq'); bind('sFollow', 'follow'); bind('sVib', 'vib');
+  bind('sMouseSens', 'mouseSens', v => v.toFixed(1)); bind('sVol', 'vol', v => Math.round(v*100)); bind('sHq', 'hq'); bind('sFollow', 'follow'); bind('sVib', 'vib'); bind('sCockpit', 'cockpit');
   Game.showOv('settings');
 }
 
