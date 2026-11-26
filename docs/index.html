@@ -175,6 +175,8 @@ html[lang=en] .title-en{letter-spacing:3px}
 #scoreTxt{padding:0 10px;border-radius:999px;background:#fff;color:var(--ink);font:900 16px/1.4 var(--num);box-shadow:0 2px 0 var(--accent);transform-origin:0 50%}
 #scoreTxt.bump{animation:bump .25s ease-out}
 #waveBox{position:absolute;left:50%;top:calc(12px + var(--st));transform:translateX(-50%);text-align:center;padding:5px 18px 7px;min-width:170px}
+#dayTxt{font:900 12px/1.2 var(--num);color:#9fb4e8;letter-spacing:1px;margin-bottom:2px}
+#dayTxt.sun{color:var(--gold)}
 #waveTxt{font-size:19px;font-weight:900;font-style:italic;letter-spacing:1px}
 #remBar{height:10px;margin:4px 0 3px}
 #remBar>i{background:linear-gradient(90deg,var(--accent),var(--accent-hi))}
@@ -301,7 +303,7 @@ body:not(.gyro-on) #calBtn,body:not(.gyro-on) .gyroOnly{display:none!important}
 <div id="hud">
   <div id="hpBox" class="sa-l hud-surface"><span id="heart"></span><div id="hpBar" class="bar"><i id="hpGhost" class="gh"></i><i id="hpFill"></i></div><b id="hpTxt" class="num">100</b></div>
   <div id="scoreRow" class="sa-l hud-surface"><b id="scoreTxt" class="num">0</b><span id="killTxt"></span></div>
-  <div id="waveBox" class="hud-surface"><div id="waveTxt"></div><div id="remBar" class="bar"><i></i></div><div id="subTxt"></div></div>
+  <div id="waveBox" class="hud-surface"><div id="dayTxt"></div><div id="waveTxt"></div><div id="remBar" class="bar"><i></i></div><div id="subTxt"></div></div>
   <div id="bossBox" class="hud-surface"><div id="bossName"><span data-en="BOSS · Butcher">BOSS · 屠夫</span><span id="bossPct" class="num"></span></div><div id="bossBar" class="bar"><i></i></div></div>
   <canvas id="radar" class="sa-r" width="208" height="208"></canvas>
   <button id="pauseBtn" class="hbtn icon-button" style="right:calc(132px + env(safe-area-inset-right))" aria-label="暂停"></button>
@@ -629,6 +631,15 @@ const lam = color => matCache[color] || (matCache[color] = new THREE.MeshLambert
   const sun = new THREE.Sprite(new THREE.SpriteMaterial({ map:sunTex, fog:false, depthWrite:false, transparent:true }));
   sun.scale.set(90, 90, 1); sun.position.set(-230, 190, -330); sun.renderOrder = -1; skyG.add(sun);
   skyG.onBeforeRender = () => {};
+  // 月亮 + 星星（夜里显示）
+  const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map:sunTex, color:0xc8d8ff, fog:false, depthWrite:false, transparent:true }));
+  moon.scale.set(46, 46, 1); moon.position.set(210, 170, -300); moon.renderOrder = -1; skyG.add(moon);
+  const sp = []; const rs = seeded(7);
+  for(let i=0;i<420;i++){ const a = rs()*Math.PI*2, y = 0.08 + rs()*0.92, r = Math.sqrt(1 - y*y); sp.push(Math.cos(a)*r*450, y*450, Math.sin(a)*r*450); }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
+  const stars = new THREE.Points(sg, new THREE.PointsMaterial({ color:0xffffff, size:2, sizeAttenuation:false, fog:false, transparent:true, depthWrite:false }));
+  stars.renderOrder = -1; skyG.add(stars);
+  window.__sky = { mat, sun, moon, stars };
   // 渲染前同步（sky 的 onBeforeRender 时 sun 的矩阵已算过，所以在每帧渲染前手动更新）
   window.__skyG = skyG;
 }
@@ -642,6 +653,38 @@ scene.add(sunL); scene.add(sunL.target);
 const SUN_OFF = new V3(-30, 50, -45);
 const muzzleLight = new THREE.PointLight(0xffb050, 0, 14, 2); scene.add(muzzleLight);
 const boomLight = new THREE.PointLight(0xff8a30, 0, 30, 2); scene.add(boomLight);
+// 车顶探照灯：夜里照亮枪口指的方向
+const headL = new THREE.SpotLight(0xfff0d0, 0, 60, 0.62, 0.55, 1.1); scene.add(headL); scene.add(headL.target);
+
+/* ---- 昼夜：k = 0 深夜 → 0.5 黎明 → 1 白天 ---- */
+const SKY_KEYS = [
+  // k,  天顶,     中间,     地平线/雾, 半球天,   半球地,   半球强度, 主光色,   主光强度, 雾近, 雾远
+  [0,    0x0a1330, 0x1a2848, 0x283552,  0x7088c0, 0x1e1c28, 0.66,     0xa0b8ff, 0.34,     28,   150],
+  [0.5,  0x2c4680, 0xc98a78, 0xeea06e,  0xffc8a8, 0x4a3a34, 0.7,      0xffa060, 0.7,      34,   180],
+  [1,    0x3f6fb8, 0x9fb8d8, 0xe9c6a0,  0xd8e6ff, 0x6a5440, 0.78,     0xffe0b8, 0.95,     40,   210],
+];
+const Sky = {
+  k:1, from:1, to_:1, dur:0, t:0, _a:new THREE.Color(), _b:new THREE.Color(),
+  set(k){ this.dur = 0; this.apply(k); },
+  to(k, sec){ this.from = this.k; this.to_ = k; this.dur = sec; this.t = 0; },
+  update(dt){ if(this.dur > 0){ this.t += dt; const u = Math.min(1, this.t/this.dur); this.apply(lerp(this.from, this.to_, u*u*(3 - 2*u))); if(u >= 1) this.dur = 0; } },
+  col(out, i, a, b, u){ return out.setHex(a[i]).lerp(this._b.setHex(b[i]), u); },
+  apply(k){
+    k = clamp(k, 0, 1); this.k = k;
+    const j = k < 0.5 ? 0 : 1, A = SKY_KEYS[j], B = SKY_KEYS[j + 1], u = (k - A[0])/(B[0] - A[0]), S2 = window.__sky;
+    this.col(S2.mat.uniforms.top.value, 1, A, B, u); this.col(S2.mat.uniforms.mid.value, 2, A, B, u); this.col(S2.mat.uniforms.hor.value, 3, A, B, u);
+    this.col(scene.fog.color, 3, A, B, u); scene.background.copy(scene.fog.color);
+    this.col(hemi.color, 4, A, B, u); this.col(hemi.groundColor, 5, A, B, u); hemi.intensity = lerp(A[6], B[6], u);
+    this.col(sunL.color, 7, A, B, u); sunL.intensity = lerp(A[8], B[8], u);
+    scene.fog.near = lerp(A[9], B[9], u); scene.fog.far = lerp(A[10], B[10], u);
+    const r = clamp((k - 0.3)/0.7, 0, 1);
+    S2.sun.position.set(-230, lerp(-70, 190, r), -330); S2.sun.material.opacity = clamp((k - 0.3)*4, 0, 1);
+    S2.moon.material.opacity = clamp(1 - k*2.4, 0, 1); S2.stars.material.opacity = clamp(1 - k*3, 0, 1);
+    S2.moon.visible = S2.moon.material.opacity > 0; S2.stars.visible = S2.stars.material.opacity > 0;
+    headL.intensity = clamp(1 - k/0.55, 0, 1)*2.4;
+    gunHemi.intensity = lerp(0.5, 0.95, k); gunSun.intensity = lerp(0.45, 0.75, k);
+  },
+};
 
 /* =====================================================================
    4. 世界：地面、道路、废墟、树、箱子、残骸…（静态方块统一用一个 InstancedMesh）
@@ -1179,8 +1222,8 @@ let ramSpikes, turretGun, carTall;
    ===================================================================== */
 const gunScene = new THREE.Scene();
 const gunCam = new THREE.PerspectiveCamera(58, 1, 0.01, 20);
-gunScene.add(new THREE.HemisphereLight(0xfff0e0, 0x504030, 0.95));
-{ const d = new THREE.DirectionalLight(0xffe8c8, 0.75); d.position.set(-1, 2, 1.5); gunScene.add(d); }
+const gunHemi = new THREE.HemisphereLight(0xfff0e0, 0x504030, 0.95); gunScene.add(gunHemi);
+const gunSun = new THREE.DirectionalLight(0xffe8c8, 0.75); gunSun.position.set(-1, 2, 1.5); gunScene.add(gunSun);
 const gunFlashLight = new THREE.PointLight(0xffb050, 0, 4, 2); gunScene.add(gunFlashLight);
 const gun = new THREE.Group(); gunScene.add(gun);
 // 枪身绕枪架略微上扬：从画面底部中间伸向准星（按草图）
@@ -2077,9 +2120,34 @@ const Assist = {
 /* =====================================================================
    13. 波次
    ===================================================================== */
+const Dawn = {
+  burning:false,
+  start(sub){
+    this.burning = true; Sky.to(1, 4.5);
+    for(const z of Zombies.list) if(!z.idle){ z.burnT = rand(0.25, 1.9); z.speed *= 0.25; }
+    HUD.announce(T('天亮了！', 'DAYBREAK!'), sub || '', '#ffd25a'); Sfx.pickup(); vibrate([30, 50, 30, 50, 80]); Cam.trauma(0.15);
+  },
+  update(dt){
+    if(!this.burning) return;
+    let any = false;
+    for(const z of Zombies.list.slice()){
+      if(z.dead || z.idle) continue;
+      if(z.burnT === undefined){ z.burnT = rand(0.1, 0.8); z.speed *= 0.25; }
+      any = true; z.burnT -= dt;
+      const n = Math.random() < dt*(28*z.s) ? 2 : 0;
+      for(let i=0;i<n;i++) PG.spawn(z.pos.x + rand(-0.4, 0.4)*z.s, z.pos.y + rand(0.3, 1.8)*z.s, z.pos.z + rand(-0.4, 0.4)*z.s, rand(-0.6, 0.6), rand(2.5, 4.5), rand(-0.6, 0.6), rand(0.18, 0.34)*z.s, Math.random() < 0.5 ? 0xff7a1a : 0xffd040, rand(0.35, 0.6), -3, 0, 1.5);
+      if(z.burnT <= 0){ z.dead = true; FX.gibs(z, new V3(0, 1, 0), false); Game.kills++; Game.score += z.cfg.score; Zombies.remove(z); }
+    }
+    if(!any) this.burning = false;
+  },
+};
+// 无尽模式：一夜 150 秒，天亮后休息一会儿再入夜
+const NIGHT_LEN = 150;
+const Day = { n:1, survived:0, t:NIGHT_LEN, day:false, dusk:false, reset(){ Object.assign(this, { n:1, survived:0, t:NIGHT_LEN, day:false, dusk:false }); } };
+
 const Waves = {
   n:0, q:[], spawnT:0, phase:'wait', t:0, hpMul:1, seen:{},
-  reset(){ this.n = 0; this.q = []; this.phase = 'wait'; this.t = 2.5; this.seen = {}; },
+  reset(){ this.n = 0; this.q = []; this.phase = 'wait'; this.t = 2.5; this.seen = {}; Day.reset(); },
   build(n){
     const total = Math.round(6 + n*3 + n*n*0.12);
     const w = { normal:1, runner:n >= 2 ? 0.2 + 0.035*n : 0, exploder:n >= 3 ? 0.1 + 0.012*n : 0, brute:n >= 4 ? 0.06 + 0.012*n : 0, spitter:n >= 5 ? 0.08 + 0.01*n : 0 };
@@ -2092,7 +2160,9 @@ const Waves = {
   },
   start(n){
     this.n = n; this.q = this.build(n); this.total = this.q.length; this.phase = 'combat'; this.spawnT = 0.5; this.hpMul = 1 + 0.11*(n - 1);
-    vibrate([30, 60, 30]); HUD.announce(T('第 ' + n + ' 波', 'WAVE ' + n), n % 5 === 0 ? 'BOSS' : '', n % 5 === 0 ? '#ff5a3a' : '#ffd28a');
+    let night = '';
+    if(Day.day){ Day.day = false; Day.dusk = false; Day.n++; Day.t = NIGHT_LEN; Sky.set(0); night = T('第 ' + Day.n + ' 夜', 'Night ' + Day.n); }
+    vibrate([30, 60, 30]); HUD.announce(T('第 ' + n + ' 波', 'WAVE ' + n), n % 5 === 0 ? 'BOSS' + (night ? ' · ' + night : '') : night, n % 5 === 0 ? '#ff5a3a' : '#ffd28a');
     Sfx.horn();
     if(n > 1) Pickups.randomSpawn();
   },
@@ -2111,8 +2181,23 @@ const Waves = {
     }
     return false;
   },
+  dawn(){
+    Day.day = true; Day.survived++; this.q = []; this.phase = 'dawn'; this.t = 5.5;
+    Game.score += 500*Day.survived;
+    Dawn.start(T('存活 ' + Day.survived + ' 天 · +' + 500*Day.survived + ' 分', 'Survived ' + Day.survived + (Day.survived > 1 ? ' days' : ' day') + ' · +' + 500*Day.survived));
+  },
   update(dt){
-    if(this.phase === 'wait'){ this.t -= dt; if(this.t <= 0) this.start(this.n + 1); return; }
+    // 夜里：天色慢慢变亮，时间到了就天亮
+    if(!Day.day){
+      Day.t -= dt; Sky.set(lerp(0, 0.3, 1 - Day.t/NIGHT_LEN));
+      if(Day.t <= 0 && (this.phase === 'combat' || this.phase === 'wait')){ this.dawn(); return; }
+    }
+    if(this.phase === 'dawn'){ this.t -= dt; if(this.t <= 0 && !Dawn.burning && !Car.dead) Game.showUpgrade(); return; }
+    if(this.phase === 'wait'){
+      this.t -= dt;
+      if(Day.day && !Day.dusk && this.t < 8){ Day.dusk = true; Sky.to(0, 8); HUD.toast(T('夜幕降临', 'Night is falling'), 2.5); }
+      if(this.t <= 0) this.start(this.n + 1); return;
+    }
     if(this.phase === 'combat'){
       this.spawnT -= dt;
       const cap = Math.min(MAX_Z - 4, 22 + this.n*2);
@@ -2198,11 +2283,8 @@ const Level = {
         if(Math.abs(z.pos.z - Car.pos.z) > 62){ const p = this.spawnPos(z.type); if(p){ z.pos.set(p.x, -1.9*z.s, p.z); z.rise = 0; z.kb.set(0, 0, 0); } }
       }
     }
-    if(this.killAll){
-      this.killAll = false;
-      for(const o of Zombies.list.slice()) if(!o.dead) Zombies.damage(o, 1e9, new V3(0, 1, 0), 3, false, o.pos, true);
-      Gems.collectAll();
-    }
+    if(this.killAll){ this.killAll = false; Dawn.start(T('阳光烧光了所有僵尸', 'The sun burns them all')); Gems.collectAll(); }
+    if(this.phase === 'fight') Sky.set(lerp(0, 0.3, f)); else if(this.phase === 'boss') Sky.set(0.32);
     if(this.phase === 'fight'){
       if(this.t >= c.dur){ this.startBoss(); return; }
       const cap = Math.min(MAX_Z - 6, Math.round(lerp(c.cap[0], c.cap[1], f))), rate = lerp(c.rate[0], c.rate[1], Math.pow(f, 1.1));
@@ -2212,7 +2294,7 @@ const Level = {
       this.spawnT -= dt;
       if(this.spawnT <= 0){ this.spawnT = 1.4; if(Zombies.list.length < 18) this.spawn(this.pick(c.mix(1))); }
     } else if(this.phase === 'won'){
-      this.wonT -= dt; if(this.wonT <= 0){ Game.victory(); return; }
+      this.wonT -= dt; if(this.wonT <= 0 && !Dawn.burning){ Game.victory(); return; }
     }
     // 攒下的升级：一个一个选
     if(this.pend > 0 && this.phase !== 'won' && !Car.dead) Game.showUpgrade();
@@ -2237,7 +2319,7 @@ const Level = {
     const v = z.elite ? 15 : ({ normal:1, runner:1, exploder:2, spitter:2, brute:4 })[z.type] || 0;
     if(v) Gems.spawn(z.pos.x, z.pos.z, v);
     if(z.elite) Pickups.spawn(z.pos.x + 1.5, z.pos.z);
-    if(z.type === 'boss' && this.phase === 'boss'){ this.phase = 'won'; this.wonT = 3.2; this.killAll = true; Game.score += 5000; }
+    if(z.type === 'boss' && this.phase === 'boss'){ this.phase = 'won'; this.wonT = 5.5; this.killAll = true; Game.score += 5000; }
   },
   addXp(v){ this.xp += v; while(this.xp >= this.need){ this.xp -= this.need; this.lv++; this.need = this.needFor(this.lv); this.pend++; } },
 };
@@ -2313,6 +2395,10 @@ const HUD = {
     // 波次 + 剩余僵尸条
     const rb = $('remBar');
     rb.classList.toggle('xp', Level.on);
+    const sunUp = Level.on ? Level.phase === 'won' : Day.day;
+    this.set('dayTxt', Level.on ? (Level.phase === 'fight' ? T('☾ 距离天亮', '☾ UNTIL DAWN') : Level.phase === 'boss' ? T('☾ 黎明前', '☾ BEFORE DAWN') : T('☀ 天亮了', '☀ DAYBREAK'))
+      : Day.day ? T('☀ 第 ' + Day.n + ' 天', '☀ DAY ' + Day.n) : T('☾ 第 ' + Day.n + ' 夜 · ', '☾ NIGHT ' + Day.n + ' · ') + fmtT(Day.t));
+    if(this.lastTxt.sun !== sunUp){ this.lastTxt.sun = sunUp; $('dayTxt').classList.toggle('sun', sunUp); }
     if(Level.on){
       this.set('waveTxt', Level.phase === 'fight' ? fmtT(Level.cfg.dur - Level.t) : Level.phase === 'boss' ? 'BOSS' : T('通关', 'CLEAR'));
       rb.style.display = ''; this.bar(rb.firstChild, 'rem', Level.xp/Level.need);
@@ -2326,7 +2412,7 @@ const HUD = {
       const wn = Waves.phase === 'wait' ? Waves.n + 1 : Waves.n;
       this.set('waveTxt', Waves.n ? T('第 ' + wn + ' 波', 'Wave ' + wn) : T('准备', 'Get ready'));
       rb.style.display = 'none';
-      this.set('subTxt', Waves.phase === 'wait' ? T(Math.ceil(Waves.t) + ' 秒后开始', 'Starts in ' + Math.ceil(Waves.t)) : T('已清空', 'Cleared'));
+      this.set('subTxt', Waves.phase === 'wait' ? T(Math.ceil(Waves.t) + ' 秒后开始', 'Starts in ' + Math.ceil(Waves.t)) : Waves.phase === 'dawn' ? T('天亮了', 'Daybreak') : T('已清空', 'Cleared'));
     }
     this.set('scoreTxt', String(Game.score));
     if(Game.score !== this.lastScore){ if(this.lastScore >= 0 && Game.score > this.lastScore){ const s = $('scoreTxt'); s.classList.remove('bump'); void s.offsetWidth; s.classList.add('bump'); } this.lastScore = Game.score; }
@@ -2426,7 +2512,7 @@ const Game = {
   start(opts){
     if(opts) this.cur = opts;
     const cur = this.cur || { mode:'endless' }, lv = cur.mode === 'level' ? LEVELS.find(l => l.id === cur.id) : null;
-    World.build(lv ? lv.map : 'town'); Level.reset(lv); Gems.clear();
+    World.build(lv ? lv.map : 'town'); Level.reset(lv); Gems.clear(); Dawn.burning = false; Sky.set(0);
     Sfx.init(); if(S.gyro) Gyro.request(); Gyro.reset();
     if(IS_TOUCH && !IS_APP){ try { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if(r) r.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch(e){} }
     Object.assign(Up, { magnet:1, dmgMul:1, rateMul:1, heatMul:1, barrels:1, pierce:0, ramMul:1, ramArmor:false, speedMul:1, boomEvery:0, leech:0, headMul:2, lv:{} });
@@ -2449,7 +2535,7 @@ const Game = {
   },
   quit(){
     this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock();
-    World.build('town'); Level.reset(null); Gems.clear();
+    World.build('town'); Level.reset(null); Gems.clear(); Dawn.burning = false; Sky.set(1);
     Car.reset(); Car.sync(); Waves.reset(); Acid.clear(); Pickups.clear(); Tracers.clear(); Blasts.clear(); this.menuScene();
     this.setState('menu'); this.showOv('menu'); Sfx.engine(0, false); refreshMenu();
   },
@@ -2467,7 +2553,7 @@ const Game = {
   showUpgrade(){
     this.setState('upgrade'); Input.firing = false; releaseTouches(); Sfx.engine(0, false);
     this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock(); else this.unlockOk = false;
-    $('upTitle').textContent = Level.on ? T('升级！', 'LEVEL UP!') + ' Lv ' + (Level.lv - Level.pend + 1) : T('第 ' + Waves.n + ' 波完成', 'Wave ' + Waves.n + ' complete');
+    $('upTitle').textContent = Level.on ? T('升级！', 'LEVEL UP!') + ' Lv ' + (Level.lv - Level.pend + 1) : Waves.phase === 'dawn' ? T('天亮了', 'Daybreak') : T('第 ' + Waves.n + ' 波完成', 'Wave ' + Waves.n + ' complete');
     const box = $('cards'); box.innerHTML = '';
     upgradeChoices().forEach((u, i) => {
       const lv = Up.lv[u.id] || 0, c = document.createElement('div'); c.className = 'card'; c.style.animationDelay = (i*0.09) + 's';
@@ -2477,7 +2563,7 @@ const Game = {
       c.innerHTML = `<div class="card-in"><div class="ic" style="--ic:${ICON[u.id] ? ICON[u.id][2] : '#555'}">${ICON[u.id] ? ico(u.id, 30) : u.ic}</div><div class="nm">${T(u.nm, UP_EN[u.id][0])}</div><div class="ds">${T(u.ds, UP_EN[u.id][1])}</div>${pips}</div><b class="plate">${i + 1}</b>`;
       c.onclick = () => { Sfx.click(); Up.lv[u.id] = lv + 1; u.f();
         if(Level.on){ Level.pend--; if(Level.pend > 0){ this.showUpgrade(); return; } this.showOv(null); this.setState('play'); Gyro.reset(); if(!IS_TOUCH) lockPointer(); return; }
-        this.showOv(null); this.setState('play'); Waves.phase = 'wait'; Waves.t = 3; Gyro.reset(); if(!IS_TOUCH) lockPointer(); };
+        this.showOv(null); this.setState('play'); Waves.phase = 'wait'; Waves.t = Day.day ? 14 : 3; Gyro.reset(); if(!IS_TOUCH) lockPointer(); };
       box.appendChild(c);
     });
     this.showOv('upgrade');
@@ -2486,8 +2572,8 @@ const Game = {
     this.setState('over'); Sfx.engine(0, false);
     this.unlockOk = true; if(document.pointerLockElement) document.exitPointerLock(); else this.unlockOk = false;
     const best = getBest(), nb = this.score > best; if(nb) setBest(this.score);
-    const st2 = Level.on ? [T('坚持', 'Survived'), fmtT(Level.t)] : [T('坚持到', 'Reached'), T('第 ' + Waves.n + ' 波', 'Wave ' + Waves.n)];
-    const st4 = Level.on ? [T('等级', 'Level'), 'Lv ' + Level.lv] : [T('最高分', 'Best'), Math.max(best, this.score)];
+    const st2 = Level.on ? [T('坚持', 'Survived'), fmtT(Level.t)] : [T('存活', 'Survived'), T(Day.survived + ' 天', Day.survived + (Day.survived === 1 ? ' day' : ' days'))];
+    const st4 = Level.on ? [T('等级', 'Level'), 'Lv ' + Level.lv] : [T('坚持到', 'Reached'), T('第 ' + Waves.n + ' 波', 'Wave ' + Waves.n)];
     this.result(T('战斗结束', 'GAME OVER'), T('战车被摧毁', 'Rig destroyed'), false, nb, [st2, [T('击杀', 'Kills'), this.kills], st4], null);
   },
   // 结算面板（失败 / 通关共用）
@@ -2516,6 +2602,7 @@ const Game = {
     Zombies.update(dt); Acid.update(dt); Blasts.update(dt); Pickups.update(dt);
     if(!Car.dead){ if(Level.on) Level.update(dt); else Waves.update(dt); }
     if(Level.on) Gems.update(dt);
+    Dawn.update(dt);
     if(Car.dead){ Car.deadT += dt/this.timeScale; if(Car.deadT > 2.2) this.gameOver(); }
     Sfx.engine(Math.hypot(Car.vel.x, Car.vel.z), !Car.dead);
   },
@@ -2568,6 +2655,8 @@ function advance(raw){
   boomLight.intensity = damp(boomLight.intensity, 0, 8, raw);
   Car.sync();
   sunL.position.copy(Car.pos).add(SUN_OFF); sunL.target.position.copy(Car.pos);
+  Sky.update(raw);
+  if(headL.intensity > 0){ const fx = -Math.sin(Car.yaw), fz = -Math.cos(Car.yaw); headL.position.set(Car.pos.x + fx*0.8, 2.6, Car.pos.z + fz*0.8); headL.target.position.set(Car.pos.x + fx*22, 0, Car.pos.z + fz*22); headL.target.updateMatrixWorld(); }
   if(document.body.classList.contains('playing')) HUD.update(raw);
   camera.updateMatrixWorld(); window.__skyG.quaternion.copy(camera.quaternion).invert();
   renderer.clear();
@@ -2654,7 +2743,7 @@ FireRing.build(); applyGyroUI();
 Car.reset(); Car.sync(); Game.menuScene(); applyLang(); applyQuality();
 $('loading').remove(); Game.showOv('menu');
 requestAnimationFrame(frame);
-window.FP = { Level, Gems, LEVELS, renderer, scene, camera, carG, gunScene, gunCam, Game, Car, Gun, Zombies, Waves, Input, Up, Gyro, Assist, Touch, HUD, World, S, tick(sec, fn){ for(let i=0;i<sec*60;i++){ if(fn) fn(i/60); advance(1/60); } } };   // 调试用
+window.FP = { Day, Sky, Dawn, Level, Gems, LEVELS, renderer, scene, camera, carG, gunScene, gunCam, Game, Car, Gun, Zombies, Waves, Input, Up, Gyro, Assist, Touch, HUD, World, S, tick(sec, fn){ for(let i=0;i<sec*60;i++){ if(fn) fn(i/60); advance(1/60); } } };   // 调试用
 </script>
 </body>
 </html>
